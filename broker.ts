@@ -1,7 +1,10 @@
 import * as amqp from "amqplib";
 import { createPool, Pool } from "generic-pool";
-import { Chat, MessageFromMQ, MessageToMQ, TypeSocket } from "./types";
+import { Message, MessageFromMQ, MessageToMQ, TypeSocket } from "./types";
 import { generateRandomId } from "./utils";
+import { saveBotMessage } from "./mongo/mongodb";
+import { MessageModel } from "./mongo/model";
+import { Document } from "mongoose";
 
 const amqpUrl = process.env.AMQP_URL || "amqp://localhost:5672";
 const exchangeNameForPublish = "celery";
@@ -23,18 +26,20 @@ const amqpPool: Pool<amqp.Channel> = createPool({
     max: 10,
 })
 
-function buildMessage(history:Array<Chat> = [], username:string, message:string) {
+function buildMessage(history:Array<Message> = [], message:Document & Message) {
     const msg: MessageToMQ = {
-        id: "id",
+        id: message.replyMessageId,
         task: "inference",
         args: [
             {
                 history,
-                userId: username,
-                content: message,
-                messageFrom: username,
+                persona: "",
+                userId: message.userId,
+                content: message.content,
+                messageFrom: message.userId,
                 messageTo: "1",
                 characterName: "김미소",
+                status: "STARTED",
                 generationArgs: {
                     temperature: 0.3,
                     repetition_penalty: 1.5,
@@ -48,16 +53,16 @@ function buildMessage(history:Array<Chat> = [], username:string, message:string)
     return JSON.stringify(msg);
 }
 
-async function publish(username:string, message: string, routingKey: string = "celery") {  
+async function publish(history:Array<Message>, message:Document & Message, routingKey: string = "celery") {  
     const channel = await amqpPool.acquire();
 
     try {
         // TODO: Exchange 검증 지우기
         await channel.assertExchange(exchangeNameForPublish, "direct", {durable: true});
         // 메시지 발행
-        channel.publish(exchangeNameForPublish, routingKey, Buffer.from(buildMessage([], username, "HI")), {contentType: "application/json"});
+        channel.publish(exchangeNameForPublish, routingKey, Buffer.from(buildMessage(history, message)), {contentType: "application/json"});
     } catch (err) {
-        console.error(`Error occured while sending message ${username}: ${message}`);
+        console.error(`Error occured while sending message ${message.userId}: ${message.content}`);
     } finally {
         // 커넥션풀 반환
         if (channel) {
@@ -82,11 +87,12 @@ async function subscribe(socket:TypeSocket) {
         // consumerTag = 소켓 연결이 끊어졌을때 구독 취소를 위한 정보
         consumerTag = (await channel.consume(randomQueueName, msg => {
             if (msg === null) return;
-            // console.log('Received message:', msg.content.toString("utf-8"));
-
-            // 클라이언트에게 메시지 전달
             const messageFromMq:MessageFromMQ = JSON.parse(msg.content.toString("utf-8"));
+            
+            // DB 저장 및 클라이언트에게 메시지 전달
+            saveBotMessage(messageFromMq).catch(console.error);
             socket.emit("subscribe", messageFromMq);
+            
             // 정상적으로 수신 완료
             channel.ack(msg);
         })).consumerTag;

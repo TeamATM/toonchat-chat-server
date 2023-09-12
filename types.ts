@@ -7,7 +7,7 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-    publish: (message: string) => void;
+    publish: (message: string, characterId: number) => void;
 }
 
 export interface InterServerEvents {
@@ -21,29 +21,34 @@ export interface SocketData {
 }
 
 export interface MessageFromMQ {
+    /**
+     * TODO: status, characterName 빼기
+     *       messageFrom, messageTo 이름 바꾸기
+     */
     messageId:string,
     replyMessageId?:string,
     status?:string,
     content:string,
-    messageFrom:string,
+    messageFrom:number,
     messageTo:string,
     characterName:string,
     createdAt:Date,
 }
 
-export interface Chat {
-    id: string,
-    userId: string,
-    messageId: string,
+export interface Message extends Document {
+    _id: string,
     replyMessageId: string,
-    status: string,
     content: string,
-    messageFrom: string,
-    messageTo: string,
-    characterName: string,
-    createdAt: string,
-    doStream: boolean,
+    userId: string,
+    characterId: number,
+    fromUser: boolean,
+    createdAt: Date,
+    /**
+     * TODO: status 제거
+     */
+    status: String,
 }
+
 
 interface GenerationArgs {
     temperature: number,
@@ -51,13 +56,19 @@ interface GenerationArgs {
 }
 
 interface CeleryArgs {
-    history: Array<Chat>,
+    /**
+     * TODO: status, characterName 빼기
+     *       messageFrom, messageTo 이름 바꾸기
+     */
+    history: Array<Message>,
+    persona: string,
     userId: string,
     content: string,
     messageFrom: string,
     messageTo: string,
     characterName: string,
-    generationArgs: GenerationArgs
+    generationArgs: GenerationArgs,
+    status: string,
 }
 
 export interface MessageToMQ {

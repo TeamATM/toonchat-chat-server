@@ -1,3 +1,4 @@
+import { config } from "dotenv"; config();
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -6,6 +7,7 @@ import { authenticateSocket } from "./middleware/auth";
 import { ClientToServerEvents, InterServerEvents, ServerToClientEvents, SocketData, TypeSocket } from "./types";
 import { generateRandomId } from "./utils";
 import { existMessageInProcess } from "./redis";
+import { connectToMongo, getChatHistory, saveUserMessage } from "./mongo/mongodb";
 
 const maxMessageLength = 100;
 const port = process.env.PORT || 3000;
@@ -22,6 +24,8 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEve
     // transports: ['websocket'],
 });
 
+connectToMongo();
+
 // middleware로 토큰 검증
 io.use(authenticateSocket);
 
@@ -34,7 +38,7 @@ io.on("connection", async (socket:TypeSocket) => {
     const consumerTag = await subscribe(socket);
     socket.data.consumerTag = consumerTag;
 
-    socket.on("publish", (msg:string) => {
+    socket.on("publish", (msg:string, characterId: number) => {
         const username = socket.data.username;
         
         // 글자수 제한
@@ -49,11 +53,16 @@ io.on("connection", async (socket:TypeSocket) => {
             return;
         }
 
-        // TODO: 몽고디비 연결해서 메시지 저장 & 이전 대화내역 가져오기
-        
-        // 메시지 발행
-        console.log(`Message from ${username}: ${msg}`);
-        publish(username, msg, "celery");
+        // 몽고디비 연결해서 메시지 저장 & 이전 대화내역 가져오기 => 메시지큐 전달
+        Promise.all([saveUserMessage(username, characterId, msg), getChatHistory(username, characterId)]).
+            then(result => {
+                const [message, history] = result;
+                
+                // 메시지 발행
+                console.log(`Message from ${username}: ${message.content}`);
+                publish(history, message, "celery");
+            }).
+            catch(console.error);
     });
 
     socket.on("disconnect", () => {
