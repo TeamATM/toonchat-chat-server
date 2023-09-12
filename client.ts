@@ -1,29 +1,41 @@
 import { Socket, io } from "socket.io-client";
 import jwt from "jsonwebtoken";
 import { ClientToServerEvents, ServerToClientEvents } from "./types";
+import readline from "readline"
 
 const secret = process.env.SECRET || "secret";
 const token = jwt.sign({sub: "user1", role: "user"}, secret);
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
 
 const socket:Socket<ServerToClientEvents, ClientToServerEvents> = io("http://localhost:3000/", {
     path: "/ws",
     auth: {
-        // token: token,
+        token: token,
     }
 });
 
-socket.on("connect", () => {
+
+function question(query:string) {
+    return new Promise(resolve => 
+      rl.question(query, ans => {
+        // rl.close();
+        resolve(ans);
+      })
+    );
+  }
+
+socket.on("connect", async () => {
     console.log(`connect ${socket.id}`);
-
-    setTimeout(()=>{
-        socket.emit("publish", "hello")
-    }, 1000)
-
-    setInterval(()=> {
-        socket.emit("publish", "A");
-    }, 5000);
 
     socket.on("subscribe", msg => {
         console.log(msg);
     })
+
+    while (true) {
+        let input = String(await question("Input: "));
+        socket.emit("publish", input, 1);
+    }
 })
