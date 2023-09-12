@@ -1,7 +1,7 @@
 import { Socket, io } from "socket.io-client";
 import jwt from "jsonwebtoken";
-import { ClientToServerEvents, ServerToClientEvents } from "./types";
 import readline from "readline"
+import { ClientToServerEvents, ServerToClientEvents } from "./src/types";
 
 const secret = process.env.SECRET || "secret";
 const token = jwt.sign({sub: "user1", role: "user"}, secret);
