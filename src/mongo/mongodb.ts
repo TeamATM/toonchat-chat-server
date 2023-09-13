@@ -28,7 +28,6 @@ function saveMessage(
     message:string,
     fromUser:boolean,
     messageId?:string,
-    status?:string,
 ) {
     const document = new MessageModel({
         _id: messageId || uuidv4(),
@@ -38,18 +37,21 @@ function saveMessage(
         userId,
         characterId,
         createdAt: new Date(),
-        status,
     });
 
     return document.save();
 }
 
 export function saveUserMessage(userId:string, characterId:number, message:string) {
-    return saveMessage(userId, characterId, message, true, undefined, "STARTED");
+    return saveMessage(userId, characterId, message, true, undefined);
 }
 
 export function saveBotMessage(messageFromMQ:MessageFromMQ) {
-    return saveMessage(messageFromMQ.userId, messageFromMQ.characterId, messageFromMQ.content, false, messageFromMQ.messageId, "FINISHED");
+    const {
+        userId, characterId, content, messageId,
+    } = messageFromMQ;
+
+    return saveMessage(userId, characterId, content, false, messageId);
 }
 
 export async function getChatHistory(userId:string, characterId:number) {

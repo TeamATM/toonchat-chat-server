@@ -1,7 +1,9 @@
 import * as amqp from "amqplib";
 import { createPool, Pool } from "generic-pool";
 import { TypeSocket } from "../types";
-import { Message, MessageFromMQ, MessageToMQ } from "./types";
+import {
+    Chat, Message, MessageFromMQ, MessageToMQ,
+} from "./types";
 import { generateRandomId } from "../utils";
 import { saveBotMessage } from "../mongo/mongodb";
 
@@ -26,9 +28,9 @@ const amqpPool: Pool<amqp.Channel> = createPool({
     max: 10,
 });
 
-function buildMessage(message: Message, history:Array<Message> = []) {
+function buildMessage(message: Message, history:Array<Chat> = []) {
     const msg: MessageToMQ = {
-        id: message.replyMessageId,
+        id: message.replyMessageId!,
         task: "inference",
         args: [
             {
@@ -49,7 +51,7 @@ function buildMessage(message: Message, history:Array<Message> = []) {
     return JSON.stringify(msg);
 }
 
-async function publish(history:Array<Message>, message: Message, routingKey: string = "celery") {
+async function publish(history:Array<Chat>, message: Message, routingKey: string = "celery") {
     const channel = await amqpPool.acquire();
 
     try {

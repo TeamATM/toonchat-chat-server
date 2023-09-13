@@ -13,11 +13,3 @@ export const messageSchema = new Schema<Message>({
 });
 
 messageSchema.index({ userId: 1, characterId: 1, createdAt: -1 });
-
-// export const viewSchema = new Schema({
-//     _id:{
-//         userId: String,
-//         characterName: String,
-//     },
-//     messages: [ String ],
-// })

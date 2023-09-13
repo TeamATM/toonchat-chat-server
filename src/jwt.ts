@@ -1,5 +1,5 @@
 import jwt, { JsonWebTokenError } from "jsonwebtoken";
-import { isTokenExist } from "./redis";
+import { isTokenExist } from "./redis/redis";
 
 const secret = process.env.SECRET || "secret";
 

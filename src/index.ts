@@ -1,24 +1,22 @@
 /* eslint-disable no-param-reassign */
-import { config } from "dotenv";
-
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
+
+import "./config";
 import { publish, subscribe, unsubscribe } from "./message_queue/broker";
 import * as auth from "./middleware/auth";
+import { connectToMongo, getChatHistory, saveUserMessage } from "./mongo/mongodb";
+import { existMessageInProcess } from "./redis/redis";
 import {
     ClientToServerEvents,
     InterServerEvents,
+    MessageFromClient,
     ServerToClientEvents,
     SocketData,
     TypeSocket,
-    MessageFromClient,
 } from "./types";
 import { generateRandomId } from "./utils";
-import { existMessageInProcess } from "./redis";
-import { connectToMongo, getChatHistory, saveUserMessage } from "./mongo/mongodb";
-
-config();
 
 const maxMessageLength = 100;
 const port = process.env.PORT || 3000;

@@ -11,6 +11,11 @@ export interface MessageToClient extends Chat {
     messageId: string;
     characterId: number;
     createdAt: Date;
+    /**
+     * Chat 내용
+     * conent: string,
+     * fromUser: boolean,
+     */
 }
 
 export interface ServerToClientEvents {

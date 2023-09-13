@@ -6,7 +6,7 @@ export interface Chat {
 // 디비에 저장할 정보
 export interface Message extends Document, Chat {
     _id: string;
-    replyMessageId: string;
+    replyMessageId?: string;
     userId: string;
     characterId: number;
     createdAt: Date;
