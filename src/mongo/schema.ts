@@ -1,5 +1,6 @@
+/* eslint-disable import/prefer-default-export */
 import { Schema } from "mongoose";
-import { Message } from "../types";
+import { Message } from "../message_queue/types";
 
 export const messageSchema = new Schema<Message>({
     _id: String,
@@ -9,12 +10,9 @@ export const messageSchema = new Schema<Message>({
     characterId: Number,
     fromUser: Boolean,
     createdAt: Date,
-    /**
-     * TODO: status 제거
-     */
-    status: String,
 });
-messageSchema.index({userId: 1, characterId: 1, createdAt: -1});
+
+messageSchema.index({ userId: 1, characterId: 1, createdAt: -1 });
 
 // export const viewSchema = new Schema({
 //     _id:{

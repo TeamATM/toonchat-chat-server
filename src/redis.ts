@@ -1,7 +1,7 @@
 export function isTokenExist(token: string|undefined): boolean {
-    return true;
+    return !!token;
 }
 
 export function existMessageInProcess(username: string) {
-    return false;
+    return username === "test";
 }

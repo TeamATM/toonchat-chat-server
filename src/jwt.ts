@@ -3,9 +3,9 @@ import { isTokenExist } from "./redis";
 
 const secret = process.env.SECRET || "secret";
 
-export function decodeJwtToken(token:string|undefined) {
+export default function decodeJwtToken(token:string|undefined) {
     // token 존재 확인
-    if (token == undefined) {
+    if (token === undefined) {
         console.log("Token is not given");
         throw new JsonWebTokenError("Token is not given");
     }
