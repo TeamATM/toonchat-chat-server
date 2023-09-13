@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { MessageModel } from "./model";
-import { MessageFromMQ } from "../message_queue/types";
+import { Chat, MessageFromMQ } from "../message_queue/types";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/";
 
@@ -56,10 +56,11 @@ export function saveBotMessage(messageFromMQ:MessageFromMQ) {
 
 export async function getChatHistory(userId:string, characterId:number) {
     try {
-        const aggregateResult = await MessageModel.aggregate([
+        const aggregateResult:Chat[] = await MessageModel.aggregate([
             { $match: { userId, characterId } },
             { $sort: { createdAt: -1 } },
             { $limit: 10 },
+            { $project: { content: 1, fromUser: 1 } },
         ]).exec();
 
         return aggregateResult.reverse();
