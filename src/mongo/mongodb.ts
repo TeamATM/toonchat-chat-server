@@ -16,7 +16,7 @@ export const connectToMongo = () => {
             console.log("Connected to MongoDB");
             v.connection.on("errer", (err) => { console.error(err); });
         })
-        .catch(console.error);
+        .catch((err) => { throw err; });
 };
 
 function saveMessage(
