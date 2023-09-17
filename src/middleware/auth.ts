@@ -1,28 +1,67 @@
 /* eslint-disable no-param-reassign */
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
-import * as jwt from "../jwt";
+import { RequestHandler } from "express";
+import { validateAndDecodeJwtToken } from "../jwt";
 import { TypeSocket } from "../types";
 
+function handleError(err:Error|unknown) {
+    if (err instanceof Error) {
+        if (err instanceof TokenExpiredError) {
+            // TODO: Do something
+        }
+
+        console.log("Authentication failed:", err.message);
+    } else {
+        console.log("Authentication failed:", err);
+    }
+}
+
 // eslint-disable-next-line no-unused-vars
-const authenticateSocket = (socket:TypeSocket, next: (err?: Error) => void) => {
+export const authenticateSocket = (socket:TypeSocket, next: (err?: Error) => void) => {
     const { token } = socket.handshake.auth;
 
     try {
-        const decodedToken = jwt.default(token);
+        const decodedToken = validateAndDecodeJwtToken(token);
         if (typeof decodedToken.sub !== "string") {
             throw new JsonWebTokenError("Subject field is not defined");
         }
         socket.data.username = decodedToken.sub;
         next();
     } catch (err) {
-        if (err instanceof TokenExpiredError) {
-            // TODO: Do something?
-        }
-        // 실패시 소켓 연결 종료
-        console.log("Authentication failed:", err);
+        handleError(err);
         socket.disconnect(true);
         next(new Error("Authentication failed"));
     }
 };
 
-export default authenticateSocket;
+declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace Express {
+        export interface Request {
+            userId?: string;
+        }
+    }
+}
+
+export const authenticateRequest:RequestHandler = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader) {
+        const token = authHeader.split(" ")[1]; // "Bearer TOKEN" 형태
+
+        try {
+            const decodedToken = validateAndDecodeJwtToken(token);
+            if (typeof decodedToken.sub !== "string") {
+                throw new JsonWebTokenError("Subject field is not defined");
+            }
+
+            req.userId = decodedToken.sub;
+            next();
+        } catch (err) {
+            handleError(err);
+            res.sendStatus(401); // 인증 정보 없음
+        }
+    } else {
+        res.sendStatus(401); // 인증 정보 없음
+    }
+};

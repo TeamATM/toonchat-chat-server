@@ -2,7 +2,7 @@ import "./src/config";
 import { sub, publish } from "./src/message_queue/broker";
 import { MessageFromMQ, MessageToAI } from "./src/message_queue/types";
 
-sub("test", { durable: true, autoDelete: false }, (msg) => {
+sub("test", { durable: false, autoDelete: true }, (msg) => {
     const tmp:MessageToAI = msg as unknown as MessageToAI;
     console.log(tmp);
     const data:MessageFromMQ = {

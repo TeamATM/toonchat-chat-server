@@ -3,7 +3,7 @@ import { isTokenExist } from "./redis/redis";
 
 const secret = process.env.SECRET || "secret";
 
-export default function decodeJwtToken(token:string|undefined) {
+export function validateAndDecodeJwtToken(token:string|undefined) {
     // token 존재 확인
     if (token === undefined) {
         console.log("Token is not given");
@@ -19,4 +19,10 @@ export default function decodeJwtToken(token:string|undefined) {
 
     const decodedToken = jwt.verify(token, secret);
     return decodedToken;
+}
+
+export function getUsername(token?:string) {
+    const decodedToken = validateAndDecodeJwtToken(token);
+
+    return decodedToken.sub as string;
 }
