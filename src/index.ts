@@ -73,13 +73,15 @@ io.on("connection", async (socket:TypeSocket) => {
 
         // 글자수 제한
         if (!data.content || data.content.length > maxMessageLength) {
-            console.error(`Message is empty or too long\nsender: ${username}\nmessage: ${data.content}`);
+            socket.emit("error", { content: `Message is empty or too long\nsender: ${username}\nmessage: ${data.content}` });
+            console.error(`Message length exceeded from user: ${username}, message: ${data.content}`);
             return;
         }
 
         // 한 계정당 동시 요청 가능 개수 제한
         if (existMessageInProcess(username)) {
-            console.error("아직 처리중인 메시지가 있습니다. 이전 요청이 처리된 이후에 다시 시도하세요");
+            socket.emit("error", { content: "아직 처리중인 메시지가 있습니다. 이전 요청이 처리된 이후에 다시 시도하세요" });
+            console.error(`Too many requests from user: ${username}`);
             return;
         }
 

@@ -18,8 +18,13 @@ export interface MessageToClient extends Chat {
      */
 }
 
+export interface ErrorToClient {
+    content: string;
+}
+
 export interface ServerToClientEvents {
     subscribe: (message: MessageToClient) => void;
+    error: (message: ErrorToClient) => void;
 }
 
 export interface ClientToServerEvents {

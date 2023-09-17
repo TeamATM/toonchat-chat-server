@@ -34,6 +34,11 @@ socket.on("connect", async () => {
         console.log(msg);
     });
 
+    // 에러 발생 ex) 길이 제한, 요청 제한...
+    socket.on("error", (msg) => {
+        console.error(`ERROR: ${msg.content}`);
+    });
+
     while (true) {
         // eslint-disable-next-line no-await-in-loop
         const input = String(await question("Input: "));
