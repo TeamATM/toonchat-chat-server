@@ -3,8 +3,8 @@ import { Schema } from "mongoose";
 import { Message } from "../message_queue/types";
 
 export const messageSchema = new Schema<Message>({
-    _id: String,
-    replyMessageId: String,
+    _id: Object,
+    replyMessageId: Object,
     content: String,
     userId: String,
     characterId: Number,

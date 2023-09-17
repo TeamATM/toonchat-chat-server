@@ -1,3 +1,6 @@
+import { ObjectId } from "mongoose";
+import { MessageToClient } from "../types";
+
 export interface Chat {
     fromUser: boolean;
     content: string;
@@ -5,8 +8,8 @@ export interface Chat {
 
 // 디비에 저장할 정보
 export interface Message extends Document, Chat {
-    _id: string;
-    replyMessageId?: string;
+    _id: ObjectId;
+    replyMessageId?: ObjectId;
     userId: string;
     characterId: number;
     createdAt: Date;
@@ -19,22 +22,22 @@ interface GenerationArgs {
 
 interface DataForPrompt {
     userId: string;
+    characterId: number;
     persona: string;
     history: Array<Chat>;
     content: string;
     generationArgs: GenerationArgs;
 }
 
-export interface MessageFromMQ extends Chat {
-    messageId: string;
+export interface MessageFromMQ extends MessageToClient {
     userId: string;
-    characterId: number;
-    createdAt: Date;
 }
 
-export interface MessageToMQ {
+export interface MessageToAI {
     id: string;
     task: string;
     args: [DataForPrompt, boolean];
     kwargs: Map<string, string>;
 }
+
+export type PublishMessage = MessageToAI | MessageToClient;

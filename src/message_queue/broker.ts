@@ -1,24 +1,19 @@
-import * as amqp from "amqplib";
+import { Options, Channel, connect } from "amqplib";
 import { createPool, Pool } from "generic-pool";
-import { TypeSocket } from "../types";
-import {
-    Chat, Message, MessageFromMQ, MessageToMQ,
-} from "./types";
-import { generateRandomId } from "../utils";
-import { saveBotMessage } from "../mongo/mongodb";
+import { SubscribeProcessType } from "../types";
+import { MessageFromMQ, PublishMessage } from "./types";
 
 const amqpUrl = process.env.AMQP_URL || "amqp://localhost:5672";
-const exchangeNameForPublish = "celery";
 const exchangeNameForSubscribe = "amq.topic";
 
 // 커넥션 풀 생성 (커넥션 하나당 채널 하나)
-const amqpPool: Pool<amqp.Channel> = createPool({
+const amqpPool: Pool<Channel> = createPool({
     create: async () => {
-        const connection = await amqp.connect(amqpUrl);
+        const connection = await connect(amqpUrl);
         const channel = await connection.createChannel();
         return channel;
     },
-    destroy: async (channel:amqp.Channel) => {
+    destroy: async (channel:Channel) => {
         const { connection } = channel;
         await channel.close();
         await connection.close();
@@ -28,39 +23,14 @@ const amqpPool: Pool<amqp.Channel> = createPool({
     max: 10,
 });
 
-function buildMessage(message: Message, history:Array<Chat> = []) {
-    const msg: MessageToMQ = {
-        id: message.replyMessageId!,
-        task: "inference",
-        args: [
-            {
-                history,
-                persona: "",
-                userId: message.userId,
-                content: message.content,
-                generationArgs: {
-                    temperature: 0.3,
-                    repetition_penalty: 1.5,
-                },
-            },
-            false,
-        ],
-        kwargs: new Map<string, string>(),
-    };
-
-    return JSON.stringify(msg);
-}
-
-async function publish(history:Array<Chat>, message: Message, routingKey: string = "celery") {
+async function publish(exchangeName:string, routingKey: string, message:PublishMessage) {
     const channel = await amqpPool.acquire();
 
     try {
-        // TODO: Exchange 검증 지우기
-        await channel.assertExchange(exchangeNameForPublish, "direct", { durable: true });
-        // 메시지 발행
-        channel.publish(exchangeNameForPublish, routingKey, Buffer.from(buildMessage(message, history)), { contentType: "application/json" });
+        await channel.assertExchange(exchangeName, "topic");
+        channel.publish(exchangeName, routingKey, Buffer.from(JSON.stringify(message)), { contentType: "application/json", contentEncoding: "utf-8" });
     } catch (err) {
-        console.error(`Error occured while sending message ${message.userId}: ${message.content}`);
+        console.error(`Error occured while sending message ${exchangeName} -> ${routingKey}: ${message}`);
     } finally {
         // 커넥션풀 반환
         if (channel) {
@@ -69,30 +39,40 @@ async function publish(history:Array<Chat>, message: Message, routingKey: string
     }
 }
 
-async function subscribe(socket:TypeSocket) {
+function unsubscribe(consumerTag: string) {
+    amqpPool.acquire().then((channel) => {
+        channel.cancel(consumerTag)
+            .catch(console.error)
+            .finally(() => {
+                if (channel) amqpPool.release(channel);
+            });
+    });
+}
+
+async function sub(
+    queueName:string,
+    queueOptions:Options.AssertQueue,
+    proc:SubscribeProcessType,
+    bind:boolean = true,
+) {
     const channel = await amqpPool.acquire();
-    // 접속자별로 큐 생성
-    const randomQueueName = `${socket.data.username}_${generateRandomId()}`;
 
     let consumerTag:string = "";
     try {
-        // 큐를 생성(존재하지 않으면)하고 Exchange에 username을 라우팅키로 바인드
-        // durable -> 메시지 저장소에 저장(재시작시에도 남아있음)
-        // autoDelete -> consumer가 없다면 큐 삭제
-        await channel.assertQueue(randomQueueName, { durable: true, autoDelete: true });
-        await channel.bindQueue(randomQueueName, exchangeNameForSubscribe, socket.data.username);
+        await channel.assertQueue(queueName, queueOptions);
+        if (bind) await channel.bindQueue(queueName, exchangeNameForSubscribe, "#");
 
         // consumerTag = 소켓 연결이 끊어졌을때 구독 취소를 위한 정보
-        consumerTag = (await channel.consume(randomQueueName, (msg) => {
+        consumerTag = (await channel.consume(queueName, async (msg) => {
             if (msg === null) return;
             const messageFromMq:MessageFromMQ = JSON.parse(msg.content.toString("utf-8"));
 
-            // DB 저장 및 클라이언트에게 메시지 전달
-            saveBotMessage(messageFromMq).catch(console.error);
-            socket.emit("subscribe", { ...messageFromMq });
-
-            // 정상적으로 수신 완료
-            channel.ack(msg);
+            if (await proc(messageFromMq)) {
+                channel.ack(msg); // 정상적으로 수신 완료
+            } else {
+                console.error("NACK");
+                channel.nack(msg); // 오류 발생
+            }
         })).consumerTag;
     } catch (err) {
         console.error(err);
@@ -106,14 +86,6 @@ async function subscribe(socket:TypeSocket) {
     return consumerTag;
 }
 
-function unsubscribe(consumerTag: string) {
-    amqpPool.acquire().then((channel) => {
-        channel.cancel(consumerTag)
-            .catch(console.error)
-            .finally(() => {
-                if (channel) amqpPool.release(channel);
-            });
-    });
-}
-
-export { publish, subscribe, unsubscribe };
+export {
+    publish, sub, unsubscribe,
+};

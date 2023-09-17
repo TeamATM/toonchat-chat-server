@@ -4,9 +4,13 @@ import http from "http";
 import { Server } from "socket.io";
 
 import "./config";
-import { publish, subscribe, unsubscribe } from "./message_queue/broker";
+import {
+    publish, sub, unsubscribe,
+} from "./message_queue/broker";
 import * as auth from "./middleware/auth";
-import { connectToMongo, getChatHistory, saveUserMessage } from "./mongo/mongodb";
+import {
+    connectToMongo, getChatHistory, saveBotMessage, saveUserMessage,
+} from "./mongo/mongodb";
 import { existMessageInProcess } from "./redis/redis";
 import {
     ClientToServerEvents,
@@ -17,6 +21,7 @@ import {
     TypeSocket,
 } from "./types";
 import { generateRandomId } from "./utils";
+import { buildMessage } from "./message_queue/util";
 
 const maxMessageLength = 100;
 const port = process.env.PORT || 3000;
@@ -40,6 +45,13 @@ SocketData
 
 connectToMongo();
 
+// async function tmp(msg:MessageFromMQ) {
+//     return saveBotMessage(msg)
+//         .then(() => true)
+//         .catch(() => false);
+// }
+
+sub("defaultListener", { durable: true, autoDelete: false }, async (msg) => saveBotMessage(msg).then(() => true).catch((err) => { console.error(err); return false; }));
 // middleware로 토큰 검증
 io.use(auth.default);
 
@@ -49,7 +61,11 @@ io.on("connection", async (socket:TypeSocket) => {
     console.log(`User ${socket.data.username} connected`);
 
     // 구독 && 구독 취소를 위한 정보 저장
-    const consumerTag = await subscribe(socket);
+    const consumerTag = await sub(`${socket.data.username}_${generateRandomId()}`, { durable: false, autoDelete: true }, async (msg) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { userId, ...messageToClient } = msg;
+        return socket.emit("subscribe", messageToClient);
+    });
     socket.data.consumerTag = consumerTag;
 
     socket.on("publish", (data: MessageFromClient) => {
@@ -74,9 +90,11 @@ io.on("connection", async (socket:TypeSocket) => {
         ]).then((result) => {
             const [message, history] = result;
 
-            // 메시지 발행
             console.log(`Message from ${username}: ${message.content}`);
-            publish(history, message, "celery");
+            // ACK를 위한 pub
+            publish("amq.topic", username, buildMessage(message));
+            // 추론을 위한 pub
+            publish("celery", "celery", buildMessage(message, history));
         }).catch(console.error);
     });
 

@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { Socket } from "socket.io";
-import { Chat } from "./message_queue/types";
+import { Chat, MessageFromMQ } from "./message_queue/types";
 
 export interface MessageFromClient {
     content: string,
@@ -42,3 +42,5 @@ export type TypeSocket = Socket<
     InterServerEvents,
     SocketData
 >
+
+export type SubscribeProcessType = (message:MessageFromMQ) => Promise<boolean>;

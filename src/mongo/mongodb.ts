@@ -1,5 +1,4 @@
-import mongoose from "mongoose";
-import { v4 as uuidv4 } from "uuid";
+import mongoose, { Types } from "mongoose";
 import { MessageModel } from "./model";
 import { Chat, MessageFromMQ } from "../message_queue/types";
 
@@ -15,8 +14,6 @@ export const connectToMongo = () => {
     mongoose.connect(uri, connectionOptions)
         .then(async (v) => {
             console.log("Connected to MongoDB");
-            // console.log(await ViewModel.findOne({}))
-            // console.log(await MessageModel.findOne({}))
             v.connection.on("errer", (err) => { console.error(err); });
         })
         .catch(console.error);
@@ -27,11 +24,11 @@ function saveMessage(
     characterId:number,
     message:string,
     fromUser:boolean,
-    messageId?:string,
+    replyMessageId?:string,
 ) {
     const document = new MessageModel({
-        _id: messageId || uuidv4(),
-        replyMessageId: fromUser ? uuidv4() : undefined,
+        _id: new Types.ObjectId(replyMessageId),
+        replyMessageId: fromUser ? new Types.ObjectId() : undefined,
         content: message,
         fromUser,
         userId,
@@ -43,15 +40,18 @@ function saveMessage(
 }
 
 export function saveUserMessage(userId:string, characterId:number, message:string) {
-    return saveMessage(userId, characterId, message, true, undefined);
+    return saveMessage(userId, characterId, message, true);
 }
 
 export function saveBotMessage(messageFromMQ:MessageFromMQ) {
     const {
-        userId, characterId, content, messageId,
+        userId, characterId, content, messageId, fromUser,
     } = messageFromMQ;
 
-    return saveMessage(userId, characterId, content, false, messageId);
+    console.log(messageFromMQ);
+
+    return fromUser
+        ? Promise.resolve(null) : saveMessage(userId, characterId, content, false, messageId);
 }
 
 export async function getChatHistory(userId:string, characterId:number) {
