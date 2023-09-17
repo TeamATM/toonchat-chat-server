@@ -1,4 +1,5 @@
 import mongoose, { Types } from "mongoose";
+import { Message } from "amqplib";
 import { MessageModel } from "./model";
 import { Chat, MessageFromMQ } from "../message_queue/types";
 
@@ -54,18 +55,74 @@ export function saveBotMessage(messageFromMQ:MessageFromMQ) {
         ? Promise.resolve(null) : saveMessage(userId, characterId, content, false, messageId);
 }
 
-export async function getChatHistory(userId:string, characterId:number) {
+async function getChatHistory(userId:string, characterId:number, limit:number = 0) {
     try {
-        const aggregateResult:Chat[] = await MessageModel.aggregate([
+        const pipe = MessageModel.aggregate([
             { $match: { userId, characterId } },
             { $sort: { createdAt: -1 } },
-            { $limit: 10 },
-            { $project: { content: 1, fromUser: 1 } },
-        ]).exec();
+        ]);
+        if (limit > 0) pipe.append({ $limit: limit }, { $project: { content: 1, fromUser: 1 } });
 
+        const aggregateResult = await pipe.exec();
         return aggregateResult.reverse();
     } catch (err) {
         console.error(err);
         return [];
     }
+}
+
+export function getChatHistoryAll(userId:string, characterId:number):Promise<Message[]> {
+    return getChatHistory(userId, characterId);
+}
+
+// eslint-disable-next-line max-len
+export function getChatHistoryByLimit(userId:string, characterId:number, limit:number):Promise<Chat[]> {
+    if (limit <= 0) return Promise.resolve([]);
+    return getChatHistory(userId, characterId, limit);
+}
+
+export async function getRecentChat(userId:string) {
+    try {
+        const recentMessages = MessageModel.aggregate([
+            { $match: { userId } },
+            { $sort: { _id: -1 } },
+            { $project: { userId: 0, __v: 0 } },
+            {
+                $group: {
+                    _id: "$characterId",
+                    // recentMessages: { $firstN: {}}
+                    recentMessages: { $first: "$$ROOT" },
+                },
+            },
+        ]).exec();
+
+        return recentMessages;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+    /**
+    [
+        {
+            _id: 0,
+            recentMessages: {
+            _id: new ObjectId("6506c32143852e0fca0bbb17"),
+            content: 'this is a message from botId: 0',
+            characterId: 0,
+            fromUser: false,
+            createdAt: 2023-09-17T09:13:05.841Z
+            }
+        },
+        {
+            _id: 1,
+            recentMessages: {
+            _id: new ObjectId("6506b58006d4f37377a7dafd"),
+            content: 'this is a message from botId: 1',
+            characterId: 1,
+            fromUser: false,
+            createdAt: 2023-09-17T08:14:56.736Z
+            }
+        }
+    ]
+     */
 }
