@@ -30,7 +30,13 @@ const io = new TypeServer(server, {
 
 connectToMongo();
 
-sub("defaultListener", "#", { durable: true, autoDelete: false }, async (msg) => saveBotMessage(msg).then(() => true).catch((err) => { logger.error(err, `failed to save message:\n${msg}`); return false; })).catch((err) => logger.fatal(err, "failed to subscribe defaultQueue"));
+sub("defaultListener", "#", { durable: true, autoDelete: false }, async (msg) => saveBotMessage(msg)
+    .then(() => true)
+    .catch((err) => {
+        logger.error(err, `failed to save message:\n${msg}`);
+        return false;
+    }))
+    .catch((err) => logger.fatal(err, "failed to subscribe defaultQueue"));
 
 // middleware로 토큰 검증
 io.use(authenticateSocket);

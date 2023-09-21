@@ -50,10 +50,12 @@ export function saveBotMessage(messageFromMQ:MessageFromMQ) {
         userId, characterId, content, messageId, fromUser,
     } = messageFromMQ;
 
+    if (fromUser) return Promise.resolve(null);
+
+    logger.info({ userId, characterId, msg: content });
     logger.debug(messageFromMQ);
 
-    return fromUser
-        ? Promise.resolve(null) : saveMessage(userId, characterId, content, false, messageId);
+    return saveMessage(userId, characterId, content, false, messageId);
 }
 
 async function getChatHistory(userId:string, characterId:number, limit:number = 0) {

@@ -45,7 +45,7 @@ async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient)
     ]).then((result) => {
         const [message, history] = result;
 
-        logger.debug(`Message from ${userId}: ${message.content}`);
+        logger.info({ userId, characterId: message.characterId, msg: message.content });
         logger.debug(history, `history of user: ${userId}`);
         // ACK를 위한 pub
         publish("amq.topic", userId, buildMessage(message));
