@@ -3,16 +3,17 @@ import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { RequestHandler } from "express";
 import { validateAndDecodeJwtToken } from "../jwt";
 import { TypeSocket } from "../types";
+import logger from "../logger";
 
-function handleError(err:Error|unknown) {
+function handleError(err:Error|unknown, remoteAddr:string) {
     if (err instanceof Error) {
         if (err instanceof TokenExpiredError) {
             // TODO: Do something
         }
 
-        console.log("Authentication failed:", err.message);
+        logger.warn({ host: remoteAddr }, `Authentication failed:${err.message}`);
     } else {
-        console.log("Authentication failed:", err);
+        logger.warn({ host: remoteAddr }, `Authentication failed:${err}`);
     }
 }
 
@@ -28,7 +29,7 @@ export const authenticateSocket = (socket:TypeSocket, next: (err?: Error) => voi
         socket.data.username = decodedToken.sub;
         next();
     } catch (err) {
-        handleError(err);
+        handleError(err, socket.handshake.address);
         socket.disconnect(true);
         next(new Error("Authentication failed"));
     }
@@ -58,7 +59,7 @@ export const authenticateRequest:RequestHandler = (req, res, next) => {
             req.userId = decodedToken.sub;
             next();
         } catch (err) {
-            handleError(err);
+            handleError(err, req.ip);
             res.sendStatus(401); // 인증 정보 없음
         }
     } else {

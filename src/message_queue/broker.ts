@@ -2,9 +2,10 @@ import { Options, Channel, connect } from "amqplib";
 import { createPool, Pool } from "generic-pool";
 import { SubscribeProcessType } from "../types";
 import { MessageFromMQ, PublishMessage } from "./types";
+import logger from "../logger";
 
 const amqpUrl = process.env.AMQP_URL || "amqp://localhost:5672";
-const exchangeNameForSubscribe = "amq.topic";
+const defaultSubscribeExchange = "amq.topic";
 
 // 커넥션 풀 생성 (커넥션 하나당 채널 하나)
 const amqpPool: Pool<Channel> = createPool({
@@ -30,7 +31,7 @@ async function publish(exchangeName:string, routingKey: string, message:PublishM
         await channel.assertExchange(exchangeName, "topic");
         channel.publish(exchangeName, routingKey, Buffer.from(JSON.stringify(message)), { contentType: "application/json", contentEncoding: "utf-8" });
     } catch (err) {
-        console.error(`Error occured while sending message ${exchangeName} -> ${routingKey}: ${message}`);
+        logger.fatal(err, `Error occured while sending message ${exchangeName} -> ${routingKey}: ${message}`);
     } finally {
         // 커넥션풀 반환
         if (channel) {
@@ -42,7 +43,7 @@ async function publish(exchangeName:string, routingKey: string, message:PublishM
 function unsubscribe(consumerTag: string) {
     amqpPool.acquire().then((channel) => {
         channel.cancel(consumerTag)
-            .catch(console.error)
+            .catch(logger.error)
             .finally(() => {
                 if (channel) amqpPool.release(channel);
             });
@@ -51,16 +52,17 @@ function unsubscribe(consumerTag: string) {
 
 async function sub(
     queueName:string,
+    bindPattern:string,
     queueOptions:Options.AssertQueue,
     proc:SubscribeProcessType,
-    bind:boolean = true,
+    exchangeName?:string,
 ) {
     const channel = await amqpPool.acquire();
 
     let consumerTag:string = "";
     try {
         await channel.assertQueue(queueName, queueOptions);
-        if (bind) await channel.bindQueue(queueName, exchangeNameForSubscribe, "#");
+        await channel.bindQueue(queueName, exchangeName || defaultSubscribeExchange, bindPattern);
 
         // consumerTag = 소켓 연결이 끊어졌을때 구독 취소를 위한 정보
         consumerTag = (await channel.consume(queueName, async (msg) => {
@@ -70,12 +72,12 @@ async function sub(
             if (await proc(messageFromMq)) {
                 channel.ack(msg); // 정상적으로 수신 완료
             } else {
-                console.error("NACK");
+                logger.fatal("NACK");
                 channel.nack(msg); // 오류 발생
             }
         })).consumerTag;
     } catch (err) {
-        console.error(err);
+        logger.fatal(err);
     } finally {
         // 커넥션풀에 반환
         if (channel) {

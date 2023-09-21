@@ -9,6 +9,7 @@ import { connectToMongo, saveBotMessage } from "./mongo/mongodb";
 import { TypeServer } from "./types";
 import router from "./chat/chatRouter";
 import { handleConnection } from "./socket/handler";
+import logger from "./logger";
 
 const port = process.env.PORT || 3000;
 
@@ -16,7 +17,7 @@ const app = express();
 app.use(authenticateRequest);
 app.use("/chat", router);
 const server = http.createServer(app);
-server.listen(port, () => { console.log(`Server is running on port ${port}`); });
+server.listen(port, () => { logger.info(`Server is running on port ${port}`); });
 
 const io = new TypeServer(server, {
     path: "/ws",
@@ -29,7 +30,7 @@ const io = new TypeServer(server, {
 
 connectToMongo();
 
-sub("defaultListener", { durable: true, autoDelete: false }, async (msg) => saveBotMessage(msg).then(() => true).catch((err) => { console.error(err); return false; }));
+sub("defaultListener", "#", { durable: true, autoDelete: false }, async (msg) => saveBotMessage(msg).then(() => true).catch((err) => { logger.error(err, `failed to save message:\n${msg}`); return false; })).catch((err) => logger.fatal(err, "failed to subscribe defaultQueue"));
 
 // middleware로 토큰 검증
 io.use(authenticateSocket);

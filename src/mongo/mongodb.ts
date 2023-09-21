@@ -2,6 +2,7 @@ import mongoose, { Types } from "mongoose";
 import { Message } from "amqplib";
 import { MessageModel } from "./model";
 import { Chat, MessageFromMQ } from "../message_queue/types";
+import logger from "../logger";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/";
 
@@ -14,8 +15,8 @@ const connectionOptions: mongoose.ConnectOptions = {
 export const connectToMongo = () => {
     mongoose.connect(uri, connectionOptions)
         .then(async (v) => {
-            console.log("Connected to MongoDB");
-            v.connection.on("errer", (err) => { console.error(err); });
+            logger.info("Connected to MongoDB");
+            v.connection.on("errer", (err) => { logger.fatal(err, "failed to connect Mongo"); });
         })
         .catch((err) => { throw err; });
 };
@@ -49,7 +50,7 @@ export function saveBotMessage(messageFromMQ:MessageFromMQ) {
         userId, characterId, content, messageId, fromUser,
     } = messageFromMQ;
 
-    console.log(messageFromMQ);
+    logger.debug(messageFromMQ);
 
     return fromUser
         ? Promise.resolve(null) : saveMessage(userId, characterId, content, false, messageId);
@@ -66,7 +67,7 @@ async function getChatHistory(userId:string, characterId:number, limit:number = 
         const aggregateResult = await pipe.exec();
         return aggregateResult.reverse();
     } catch (err) {
-        console.error(err);
+        logger.fatal(err, `Failed to get history of user: ${userId}, character: ${characterId}`);
         return [];
     }
 }
@@ -98,7 +99,7 @@ export async function getRecentChat(userId:string) {
 
         return recentMessages;
     } catch (err) {
-        console.error(err);
+        logger.fatal(err, `failed to get recent chat of user: ${userId}`);
         return null;
     }
     /**

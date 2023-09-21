@@ -4,6 +4,7 @@ import "./src/config";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Socket, io } from "socket.io-client";
 import { ClientToServerEvents, ServerToClientEvents } from "./src/types";
+import logger from "./src/logger";
 
 const secret = process.env.SECRET || "secret";
 const token = jwt.sign({ sub: "user1", role: "user" }, secret);
@@ -30,7 +31,7 @@ function question(query:string) {
 
 const header:Headers = new Headers();
 header.set("Authorization", `Bearer ${token}`);
-fetch("http://localhost:3000/chat/history/0", { headers: header }).then(async (res) => { console.log(await res.json()); });
+fetch("http://localhost:3000/chat/history/0", { headers: header }).then(async (res) => { logger.debug(await res.json()); });
 /**
 [
   {
@@ -84,7 +85,7 @@ fetch("http://localhost:3000/chat/history/0", { headers: header }).then(async (r
   }
 ]
 */
-fetch("http://localhost:3000/chat/recent", { headers: header }).then(async (res) => { console.log(await res.json()); });
+fetch("http://localhost:3000/chat/recent", { headers: header }).then(async (res) => { logger.debug(await res.json()); });
 
 /**
 [
@@ -112,15 +113,15 @@ fetch("http://localhost:3000/chat/recent", { headers: header }).then(async (res)
 ]
  */
 socket.on("connect", async () => {
-    console.log(`connect ${socket.id}`);
+    logger.info(`connect ${socket.id}`);
 
     socket.on("subscribe", (msg) => {
-        console.log(msg);
+        logger.info(msg);
     });
 
     // 에러 발생 ex) 길이 제한, 요청 제한...
     socket.on("error", (msg) => {
-        console.error(`ERROR: ${msg.content}`);
+        logger.error(`ERROR: ${msg.content}`);
     });
 
     while (true) {
