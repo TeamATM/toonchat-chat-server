@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import logger from "../logger";
-import { publish, sub, unsubscribe } from "../message_queue/broker";
+import { publish, subscribe, unsubscribe } from "../message_queue/broker";
 import { buildMessage } from "../message_queue/util";
 import { saveUserMessage, getChatHistoryByLimit } from "../mongo/mongodb";
 import { existMessageInProcess } from "../redis/redis";
@@ -62,7 +62,7 @@ export async function handleConnection(socket:TypeSocket) {
 
     try {
         // 구독 && 구독 취소를 위한 정보 저장
-        const consumerTag = await sub(`${socket.data.username}_${generateRandomId()}`, socket.data.username, { durable: false, autoDelete: true }, async (msg) => {
+        const consumerTag = await subscribe(`${socket.data.username}_${generateRandomId()}`, socket.data.username, { durable: false, autoDelete: true }, async (msg) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { userId, ...messageToClient } = msg;
             return socket.emit("subscribe", messageToClient);

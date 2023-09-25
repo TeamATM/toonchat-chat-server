@@ -50,7 +50,7 @@ function unsubscribe(consumerTag: string) {
     });
 }
 
-async function sub(
+async function subscribe(
     queueName:string,
     bindPattern:string,
     queueOptions:Options.AssertQueue,
@@ -89,5 +89,5 @@ async function sub(
 }
 
 export {
-    publish, sub, unsubscribe,
+    publish, subscribe, unsubscribe,
 };
