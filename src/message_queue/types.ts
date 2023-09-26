@@ -13,6 +13,7 @@ export interface Message extends Document, Chat {
     userId: string;
     characterId: number;
     createdAt: Date;
+    embeddingVector?: Array<number>;
 }
 
 interface GenerationArgs {
@@ -24,6 +25,7 @@ interface DataForPrompt {
     userId: string;
     characterId: number;
     persona: string;
+    reference: string[];
     history: Array<Chat>;
     content: string;
     generationArgs: GenerationArgs;

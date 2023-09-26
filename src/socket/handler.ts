@@ -2,10 +2,13 @@
 import logger from "../logger";
 import { publish, subscribe, unsubscribe } from "../message_queue/broker";
 import { buildMessage } from "../message_queue/util";
-import { saveUserMessage, getChatHistoryByLimit } from "../mongo/mongodb";
+import {
+    saveUserMessage, getChatHistoryByLimit, findSimilarDocuments, getCharacterPersona,
+} from "../mongo/mongodb";
+import { EmbeddingDocument } from "../mongo/schema";
 import { existMessageInProcess } from "../redis/redis";
 import { MessageFromClient, TypeSocket } from "../types";
-import { generateRandomId } from "../utils";
+import { generateRandomId, getEmbedding } from "../utils";
 
 const maxMessageLength = Number(process.env.MAX_MESSAGE_LENGTH) || 100;
 
@@ -38,19 +41,30 @@ async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient)
         return;
     }
 
+    // openai embedding 사용
+    const embedding = await getEmbedding(data.content);
+    let vectorSearchResult:EmbeddingDocument[];
+    if (embedding != null) {
+        logger.debug(embedding);
+        // 임베딩 성공시 벡터검색 수행
+        vectorSearchResult = await findSimilarDocuments(embedding);
+        logger.debug(vectorSearchResult);
+    }
+
     // 몽고디비 연결해서 메시지 저장 & 이전 대화내역 가져오기 => 메시지큐 전달
     Promise.all([
-        saveUserMessage(userId, data.characterId, data.content),
+        saveUserMessage(userId, data.characterId, data.content, embedding || undefined),
         getChatHistoryByLimit(userId, data.characterId, 10),
+        getCharacterPersona(data.characterId),
     ]).then((result) => {
-        const [message, history] = result;
+        const [message, history, persona] = result;
 
         logger.info({ userId, characterId: message.characterId, msg: message.content });
         logger.debug(history, `history of user: ${userId}`);
-        // ACK를 위한 pub
+        // echo
         publish("amq.topic", userId, buildMessage(message));
         // 추론을 위한 pub
-        publish("celery", "celery", buildMessage(message, history));
+        publish("celery", "celery", buildMessage(message, history, persona || undefined, vectorSearchResult));
     }).catch(logger.error);
 }
 

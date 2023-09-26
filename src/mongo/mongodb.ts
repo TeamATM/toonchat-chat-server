@@ -1,8 +1,9 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { PipelineStage, Types } from "mongoose";
 import { Message } from "amqplib";
-import { MessageModel } from "./model";
+import { EmbeddingModel, MessageModel, PersonaModel } from "./model";
 import { Chat, MessageFromMQ } from "../message_queue/types";
 import logger from "../logger";
+import { EmbeddingDocument, PersonaDocument } from "./schema";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/";
 
@@ -27,6 +28,7 @@ function saveMessage(
     message:string,
     fromUser:boolean,
     replyMessageId?:string,
+    embedding?: Array<number>,
 ) {
     const document = new MessageModel({
         _id: new Types.ObjectId(replyMessageId),
@@ -36,13 +38,15 @@ function saveMessage(
         userId,
         characterId,
         createdAt: new Date(),
+        embeddingVector: embedding || undefined,
     });
 
     return document.save();
 }
 
-export function saveUserMessage(userId:string, characterId:number, message:string) {
-    return saveMessage(userId, characterId, message, true);
+// eslint-disable-next-line max-len
+export function saveUserMessage(userId:string, characterId:number, message:string, embedding?:number[]) {
+    return saveMessage(userId, characterId, message, true, undefined, embedding);
 }
 
 export function saveBotMessage(messageFromMQ:MessageFromMQ) {
@@ -104,28 +108,35 @@ export async function getRecentChat(userId:string) {
         logger.fatal(err, `failed to get recent chat of user: ${userId}`);
         return null;
     }
-    /**
-    [
+}
+
+export async function getCharacterPersona(characterId: number) {
+    const persona = await PersonaModel.findOne<PersonaDocument>(
+        // eslint-disable-next-line object-shorthand, func-names
+        { $where: function () { return this.characterId === characterId; } },
+    );
+
+    return persona;
+}
+
+export async function findSimilarDocuments(embeddingVector:Array<number>) {
+    const pipeline:PipelineStage[] = [
         {
-            _id: 0,
-            recentMessages: {
-            _id: new ObjectId("6506c32143852e0fca0bbb17"),
-            content: 'this is a message from botId: 0',
-            characterId: 0,
-            fromUser: false,
-            createdAt: 2023-09-17T09:13:05.841Z
-            }
+            $search: {
+                index: "embeddingIndex",
+                knnBeta: {
+                    vector: embeddingVector,
+                    path: "embeddingVector",
+                    k: 3,
+                },
+            },
         },
-        {
-            _id: 1,
-            recentMessages: {
-            _id: new ObjectId("6506b58006d4f37377a7dafd"),
-            content: 'this is a message from botId: 1',
-            characterId: 1,
-            fromUser: false,
-            createdAt: 2023-09-17T08:14:56.736Z
-            }
-        }
-    ]
-     */
+    ];
+
+    try {
+        return await EmbeddingModel.aggregate<EmbeddingDocument>(pipeline).exec();
+    } catch (err) {
+        logger.fatal(err, "failed to perform vector search");
+        return [];
+    }
 }

@@ -1,14 +1,25 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { EmbeddingDocument, PersonaDocument } from "../mongo/schema";
 import { Chat, Message, PublishMessage } from "./types";
 
-function buildMessage(message: Message, history?:Chat[]):PublishMessage {
+function buildMessage(
+    message: Message,
+    history?:Chat[],
+    persona?:PersonaDocument,
+    reference:EmbeddingDocument[] = [],
+):PublishMessage {
     if (history !== undefined) {
+        const ref:string[] = [];
         return {
             id: String(message.replyMessageId!),
             task: "inference",
             args: [
                 {
                     history,
-                    persona: "",
+                    persona: persona ? persona.persona.join(" ") : "",
+                    // eslint-disable-next-line max-len
+                    reference: reference.reduce((prev, cur) => { prev.push(cur.text); return prev; }, ref),
                     userId: message.userId,
                     characterId: message.characterId,
                     content: message.content,
