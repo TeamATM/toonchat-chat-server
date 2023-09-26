@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
-import { Message } from "../message_queue/types";
 import {
-    EmbeddingDocument, PersonaDocument, embeddingSchema, messageSchema, personaSchema,
+    embeddingSchema, historySchema, messageSchema, personaSchema,
 } from "./schema";
+import {
+    EmbeddingDocument, HistoryDocument, MessageDocument, PersonaDocument,
+} from "./types";
 
-export const MessageModel = mongoose.model<Message>("message", messageSchema);
+export const MessageModel = mongoose.model<MessageDocument>("message", messageSchema);
+export const HistoryModel = mongoose.model<HistoryDocument>("history", historySchema);
 export const EmbeddingModel = mongoose.model<EmbeddingDocument>("embedding", embeddingSchema);
 export const PersonaModel = mongoose.model<PersonaDocument>("persona", personaSchema);

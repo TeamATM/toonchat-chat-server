@@ -1,17 +1,15 @@
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 import { MessageToClient } from "../types";
+import { HistoryDocument } from "../mongo/types";
 
 export interface Chat {
     fromUser: boolean;
     content: string;
 }
 
-// 디비에 저장할 정보
-export interface Message extends Document, Chat {
-    _id: ObjectId;
-    replyMessageId?: ObjectId;
-    userId: string;
-    characterId: number;
+export interface Message extends Chat {
+    messageId: Types.ObjectId;
+    replyMessageId?: Types.ObjectId;
     createdAt: Date;
 }
 
@@ -21,12 +19,9 @@ interface GenerationArgs {
 }
 
 interface DataForPrompt {
-    userId: string;
-    characterId: number;
     persona: string;
     reference: string[];
-    history: Array<Chat>;
-    content: string;
+    history: HistoryDocument;
     generationArgs: GenerationArgs;
 }
 

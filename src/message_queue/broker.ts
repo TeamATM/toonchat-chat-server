@@ -29,7 +29,12 @@ async function publish(exchangeName:string, routingKey: string, message:PublishM
 
     try {
         await channel.assertExchange(exchangeName, "topic");
-        channel.publish(exchangeName, routingKey, Buffer.from(JSON.stringify(message)), { contentType: "application/json", contentEncoding: "utf-8" });
+        channel.publish(
+            exchangeName,
+            routingKey,
+            Buffer.from(JSON.stringify(message)),
+            { contentType: "application/json", contentEncoding: "utf-8" },
+        );
     } catch (err) {
         logger.fatal(err, `Error occured while sending message ${exchangeName} -> ${routingKey}: ${message}`);
     } finally {

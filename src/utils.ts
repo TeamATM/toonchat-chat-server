@@ -1,3 +1,4 @@
+import fs from "fs";
 import axios from "axios";
 import assert from "assert";
 import logger from "./logger";
@@ -12,6 +13,7 @@ export function generateRandomId() : string {
 }
 
 export async function getEmbedding(query:string) {
+    if (process.env.PROFILE !== "prod") return JSON.parse(fs.readFileSync("mockEmbedding.txt", { encoding: "utf-8" }));
     // openai embedding 사용
     const response = await axios.post(url, {
         input: query,
@@ -27,6 +29,12 @@ export async function getEmbedding(query:string) {
         return response.data.data[0].embedding as Array<number>;
     }
 
-    logger.error(`Failed to get embedding. Status code: ${response.status}`);
+    logger.error(`Failed to get embedding. Status code: ${response.status || "undefined"}`);
     return undefined;
+}
+
+export function getCurrentDate(today: Date) {
+    const startDay = new Date(today);
+    startDay.setHours(0, 0, 0, 0);
+    return startDay;
 }
