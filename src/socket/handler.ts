@@ -8,7 +8,7 @@ import {
 import { EmbeddingDocument, PersonaDocument } from "../mongo/schema";
 import { existMessageInProcess } from "../redis/redis";
 import { MessageFromClient, TypeSocket } from "../types";
-import { generateRandomId, getEmbedding } from "../utils";
+import { generateRandomId } from "../utils";
 import { Chat, Message } from "../message_queue/types";
 
 const maxMessageLength = Number(process.env.MAX_MESSAGE_LENGTH) || 100;
@@ -22,6 +22,8 @@ function checkCanRequest(userId:string, content:string) {
         errorMessage = "Message is empty or too long";
         return errorMessage;
     }
+
+    // TODO: check characterId is valid
 
     // 한 계정당 동시 요청 가능 개수 제한
     if (existMessageInProcess(userId)) {
@@ -56,15 +58,12 @@ async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient)
         return;
     }
 
-    // openai embedding 사용
-    const embedding = await getEmbedding(data.content);
-
     // 몽고디비 연결해서 메시지 저장 & 이전 대화내역 가져오기 => 메시지큐 전달
     Promise.all([
-        saveUserMessage(userId, data.characterId, data.content, embedding),
+        saveUserMessage(userId, data.characterId, data.content),
         getChatHistoryByLimit(userId, data.characterId, 10),
         getCharacterPersona(data.characterId),
-        findSimilarDocuments(embedding),
+        findSimilarDocuments(data.content),
     ]).then((result) => {
         publishMessage(result, userId);
     }).catch(logger.error);

@@ -12,6 +12,7 @@ export function generateRandomId() : string {
 }
 
 export async function getEmbedding(query:string) {
+    // openai embedding 사용
     const response = await axios.post(url, {
         input: query,
         model: "text-embedding-ada-002",

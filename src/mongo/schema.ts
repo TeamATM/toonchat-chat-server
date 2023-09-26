@@ -9,7 +9,6 @@ export const messageSchema = new Schema<Message>({
     characterId: Number,
     fromUser: Boolean,
     createdAt: Date,
-    embeddingVector: Array<number>,
 });
 
 messageSchema.index({ userId: 1, characterId: 1, createdAt: -1 });
@@ -31,13 +30,11 @@ export const embeddingSchema = new Schema({
 });
 
 export interface PersonaDocument extends Document {
-    _id: ObjectId,
-    characterId: number,
+    _id: number,
     persona: string[],
 }
 
 export const personaSchema = new Schema<PersonaDocument>({
-    _id: Object,
-    characterId: Number,
+    _id: Number,
     persona: Array<string>,
 });

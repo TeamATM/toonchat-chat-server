@@ -4,6 +4,7 @@ import { EmbeddingModel, MessageModel, PersonaModel } from "./model";
 import { Chat, MessageFromMQ } from "../message_queue/types";
 import logger from "../logger";
 import { EmbeddingDocument, PersonaDocument } from "./schema";
+import { getEmbedding } from "../utils";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/";
 
@@ -45,8 +46,8 @@ function saveMessage(
 }
 
 // eslint-disable-next-line max-len
-export function saveUserMessage(userId:string, characterId:number, message:string, embedding?:number[]) {
-    return saveMessage(userId, characterId, message, true, undefined, embedding);
+export function saveUserMessage(userId:string, characterId:number, message:string) {
+    return saveMessage(userId, characterId, message, true, undefined);
 }
 
 export function saveBotMessage(messageFromMQ:MessageFromMQ) {
@@ -119,7 +120,8 @@ export async function getCharacterPersona(characterId: number) {
     return persona || undefined;
 }
 
-export async function findSimilarDocuments(embeddingVector?:Array<number>) {
+export async function findSimilarDocuments(userInput:string) {
+    const embeddingVector = await getEmbedding(userInput);
     if (!embeddingVector) return undefined;
 
     const pipeline:PipelineStage[] = [
@@ -139,6 +141,6 @@ export async function findSimilarDocuments(embeddingVector?:Array<number>) {
         return await EmbeddingModel.aggregate<EmbeddingDocument>(pipeline).exec();
     } catch (err) {
         logger.fatal(err, "failed to perform vector search");
-        return [];
+        return undefined;
     }
 }
