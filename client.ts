@@ -31,84 +31,75 @@ function question(query:string) {
 
 const header:Headers = new Headers();
 header.set("Authorization", `Bearer ${token}`);
-fetch("http://localhost:3000/chat/history/0", { headers: header }).then(async (res) => { logger.debug(await res.json()); });
+fetch(
+    "http://localhost:3000/chat/history/0",
+    { headers: header },
+).then(async (res) => { console.log(await res.json()); });
 /**
 [
   {
-    _id: '6506c32143852e0fca0bbb16',
-    replyMessageId: '6506c32143852e0fca0bbb17',
-    content: '2',
-    userId: 'user1',
-    characterId: 0,
-    fromUser: true,
-    createdAt: '2023-09-17T09:13:05.703Z',
-    __v: 0
-  },
-  {
-    _id: '6506c32143852e0fca0bbb17',
-    content: 'this is a message from botId: 0',
-    userId: 'user1',
-    characterId: 0,
+    messageId: '6512e67a8f76aa8d96c1cd0e',
+    replyMessageId: '6512e67b8f76aa8d96c1cd13',
     fromUser: false,
-    createdAt: '2023-09-17T09:13:05.841Z',
-    __v: 0
+    content: 'this is a message from botId: 0',
+    createdAt: '2023-09-26T14:11:07.293Z'
   },
   {
-    _id: '6506e5f90f51f5e6188a20ae',
-    replyMessageId: '6506e5f90f51f5e6188a20af',
-    content: 'HI',
-    userId: 'user1',
-    characterId: 0,
+    messageId: '6512e68a8f76aa8d96c1cd16',
+    replyMessageId: '6512e68a8f76aa8d96c1cd17',
     fromUser: true,
-    createdAt: '2023-09-17T11:41:45.870Z',
-    __v: 0
+    content: '1',
+    createdAt: '2023-09-26T14:11:22.089Z'
   },
   {
-    _id: '6506e63bb7f32748ddbe8f4b',
-    replyMessageId: '6506e63bb7f32748ddbe8f4c',
-    content: 'HI',
-    userId: 'user1',
-    characterId: 0,
-    fromUser: true,
-    createdAt: '2023-09-17T11:42:51.837Z',
-    __v: 0
+    messageId: '6512e68a8f76aa8d96c1cd17',
+    replyMessageId: '6512e68a8f76aa8d96c1cd1c',
+    fromUser: false,
+    content: 'this is a message from botId: 0',
+    createdAt: '2023-09-26T14:11:22.569Z'
   },
   {
-    _id: '6506e641b7f32748ddbe8f4f',
-    replyMessageId: '6506e641b7f32748ddbe8f50',
-    content: 'zz',
-    userId: 'user1',
-    characterId: 0,
+    messageId: '6512eba5341d9d3da502413b',
+    replyMessageId: '6512eba5341d9d3da502413c',
     fromUser: true,
-    createdAt: '2023-09-17T11:42:57.369Z',
-    __v: 0
+    content: 'lkdsfjlsdakfjsad',
+    createdAt: '2023-09-26T14:33:09.335Z'
+  },
+  {
+    messageId: '6512eba5341d9d3da502413c',
+    replyMessageId: '6512eba5341d9d3da5024140',
+    fromUser: false,
+    content: 'this is a message from botId: 0',
+    createdAt: '2023-09-26T14:33:09.952Z'
   }
 ]
 */
-fetch("http://localhost:3000/chat/recent", { headers: header }).then(async (res) => { logger.debug(await res.json()); });
+fetch(
+    "http://localhost:3000/chat/recent",
+    { headers: header },
+).then(async (res) => { console.log(await res.json()); });
 
 /**
 [
   {
-    _id: 0,
-    recentMessages: {
-      _id: '6506e641b7f32748ddbe8f4f',
-      replyMessageId: '6506e641b7f32748ddbe8f50',
-      content: 'zz',
-      characterId: 0,
-      fromUser: true,
-      createdAt: '2023-09-17T11:42:57.369Z'
-    }
+    lastMessage: {
+      messageId: '6512ef254f7c8742fc8862a7',
+      replyMessageId: '6512ef264f7c8742fc8862ab',
+      fromUser: false,
+      content: 'this is a message from botId: 1',
+      createdAt: '2023-09-26T14:48:06.012Z'
+    },
+    characterId: 1
   },
   {
-    _id: 1,
-    recentMessages: {
-      _id: '6506b58006d4f37377a7dafd',
-      content: 'this is a message from botId: 1',
-      characterId: 1,
+    lastMessage: {
+      messageId: '6512eba5341d9d3da502413c',
+      replyMessageId: '6512eba5341d9d3da5024140',
       fromUser: false,
-      createdAt: '2023-09-17T08:14:56.736Z'
-    }
+      content: 'this is a message from botId: 0',
+      createdAt: '2023-09-26T14:33:09.952Z'
+    },
+    characterId: 0
   }
 ]
  */
@@ -127,6 +118,6 @@ socket.on("connect", async () => {
     while (true) {
         // eslint-disable-next-line no-await-in-loop
         const input = String(await question("Input: "));
-        socket.emit("publish", { content: input, characterId: 0 });
+        socket.emit("publish", { content: input, characterId: 1 });
     }
 });
