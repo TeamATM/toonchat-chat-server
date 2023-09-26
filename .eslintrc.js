@@ -54,6 +54,10 @@ module.exports = {
             "error",
             "always",
         ],
+        "max-len": [
+            "error",
+            120,
+        ],
         "import/extensions": [
             "error",
             "ignorePackages",
