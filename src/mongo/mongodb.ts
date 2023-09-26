@@ -116,10 +116,12 @@ export async function getCharacterPersona(characterId: number) {
         { $where: function () { return this.characterId === characterId; } },
     );
 
-    return persona;
+    return persona || undefined;
 }
 
-export async function findSimilarDocuments(embeddingVector:Array<number>) {
+export async function findSimilarDocuments(embeddingVector?:Array<number>) {
+    if (!embeddingVector) return undefined;
+
     const pipeline:PipelineStage[] = [
         {
             $search: {

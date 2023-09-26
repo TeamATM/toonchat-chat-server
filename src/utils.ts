@@ -27,5 +27,5 @@ export async function getEmbedding(query:string) {
     }
 
     logger.error(`Failed to get embedding. Status code: ${response.status}`);
-    return null;
+    return undefined;
 }

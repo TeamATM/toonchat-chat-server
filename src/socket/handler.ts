@@ -5,10 +5,11 @@ import { buildMessage } from "../message_queue/util";
 import {
     saveUserMessage, getChatHistoryByLimit, findSimilarDocuments, getCharacterPersona,
 } from "../mongo/mongodb";
-import { EmbeddingDocument } from "../mongo/schema";
+import { EmbeddingDocument, PersonaDocument } from "../mongo/schema";
 import { existMessageInProcess } from "../redis/redis";
 import { MessageFromClient, TypeSocket } from "../types";
 import { generateRandomId, getEmbedding } from "../utils";
+import { Chat, Message } from "../message_queue/types";
 
 const maxMessageLength = Number(process.env.MAX_MESSAGE_LENGTH) || 100;
 
@@ -32,6 +33,20 @@ function checkCanRequest(userId:string, content:string) {
     return errorMessage;
 }
 
+function publishMessage(
+    promiseResult: [Message, Chat[], PersonaDocument?, EmbeddingDocument[]?],
+    userId: string,
+) {
+    const [message, history, persona, vectorSearchResult] = promiseResult;
+
+    logger.info({ userId, characterId: message.characterId, msg: message.content });
+    logger.debug(history, `history of user: ${userId}`);
+    // publish or echo
+    publish("amq.topic", userId, buildMessage(message));
+    // publish for inference
+    publish("celery", "celery", buildMessage(message, history, persona, vectorSearchResult));
+}
+
 async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient) {
     const { username: userId } = socket.data;
 
@@ -43,28 +58,15 @@ async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient)
 
     // openai embedding 사용
     const embedding = await getEmbedding(data.content);
-    let vectorSearchResult:EmbeddingDocument[];
-    if (embedding != null) {
-        logger.debug(embedding);
-        // 임베딩 성공시 벡터검색 수행
-        vectorSearchResult = await findSimilarDocuments(embedding);
-        logger.debug(vectorSearchResult);
-    }
 
     // 몽고디비 연결해서 메시지 저장 & 이전 대화내역 가져오기 => 메시지큐 전달
     Promise.all([
-        saveUserMessage(userId, data.characterId, data.content, embedding || undefined),
+        saveUserMessage(userId, data.characterId, data.content, embedding),
         getChatHistoryByLimit(userId, data.characterId, 10),
         getCharacterPersona(data.characterId),
+        findSimilarDocuments(embedding),
     ]).then((result) => {
-        const [message, history, persona] = result;
-
-        logger.info({ userId, characterId: message.characterId, msg: message.content });
-        logger.debug(history, `history of user: ${userId}`);
-        // echo
-        publish("amq.topic", userId, buildMessage(message));
-        // 추론을 위한 pub
-        publish("celery", "celery", buildMessage(message, history, persona || undefined, vectorSearchResult));
+        publishMessage(result, userId);
     }).catch(logger.error);
 }
 
