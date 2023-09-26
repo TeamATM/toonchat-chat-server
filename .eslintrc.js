@@ -58,6 +58,9 @@ module.exports = {
             "error",
             120,
         ],
+        "no-array-constructor": [
+            "off",
+        ],
         "import/extensions": [
             "error",
             "ignorePackages",
