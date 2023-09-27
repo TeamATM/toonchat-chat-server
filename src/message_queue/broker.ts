@@ -28,7 +28,7 @@ async function publish(exchangeName:string, routingKey: string, message:PublishM
     const channel = await amqpPool.acquire();
 
     try {
-        await channel.assertExchange(exchangeName, "topic");
+        // await channel.assertExchange(exchangeName, "direct");
         channel.publish(
             exchangeName,
             routingKey,

@@ -11,6 +11,7 @@ import {
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/";
 const historyLength = Number(process.env.CHAT_HISTORY_LENGTH) || 10;
+const maxRefrenceLength = Number(process.env.MAX_REFERENCE_LENGTH) || 3;
 
 const connectionOptions: mongoose.ConnectOptions = {
     maxPoolSize: 100, // 100 is default value
@@ -174,7 +175,7 @@ export async function _findSimilarDocuments(vector:number[]) {
                 knnBeta: {
                     vector,
                     path: "embeddingVector",
-                    k: 3,
+                    k: maxRefrenceLength,
                 },
             },
         },

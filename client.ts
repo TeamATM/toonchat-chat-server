@@ -104,10 +104,11 @@ fetch(
 ]
  */
 socket.on("connect", async () => {
-    logger.info(`connect ${socket.id}`);
+    console.log(`connect ${socket.id}`);
 
     socket.on("subscribe", (msg) => {
-        logger.info(msg);
+        // logger.info(msg);
+        console.log(msg);
     });
 
     // 에러 발생 ex) 길이 제한, 요청 제한...
