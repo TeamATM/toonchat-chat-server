@@ -14,8 +14,9 @@ import logger from "./logger";
 const port = process.env.PORT || 3000;
 
 const app = express();
-app.use(authenticateRequest);
-app.use("/chat", router);
+app.use("/chat", authenticateRequest, router);
+app.get("/health", (req, res) => res.status(200).send("ok"));
+
 const server = http.createServer(app);
 server.listen(port, () => { logger.info(`Server is running on port ${port}`); });
 
