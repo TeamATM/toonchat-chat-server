@@ -10,10 +10,16 @@ import { TypeServer } from "./types";
 import router from "./chat/chatRouter";
 import { handleConnection } from "./socket/handler";
 import logger from "./logger";
+import cors from "cors";
 
 const port = process.env.PORT || 3000;
 
 const app = express();
+const corsOrigin = process.env.CORS_ALLOW_ORIGIN || "http://localhost:3000";
+app.use(cors({
+    origin: [corsOrigin],
+}));
+logger.info(`allowed cors origin: ${corsOrigin}`);
 app.use("/chat", authenticateRequest, router);
 app.get("/health", (req, res) => res.status(200).send("ok"));
 
@@ -23,7 +29,7 @@ server.listen(port, () => { logger.info(`Server is running on port ${port}`); })
 const io = new TypeServer(server, {
     path: "/ws",
     cors: {
-        origin: [process.env.CORS_ALLOW_ORIGIN || "http://localhost:3000"],
+        origin: [corsOrigin],
     },
     serveClient: false,
     // transports: ['websocket'],
