@@ -3,6 +3,7 @@ import express from "express";
 import http from "http";
 
 import "./config";
+import cors from "cors";
 import { subscribe } from "./message_queue/broker";
 import { authenticateSocket, authenticateRequest } from "./middleware/auth";
 import { connectToMongo, saveBotMessage } from "./mongo/mongodb";
@@ -10,7 +11,6 @@ import { TypeServer } from "./types";
 import router from "./chat/chatRouter";
 import { handleConnection } from "./socket/handler";
 import logger from "./logger";
-import cors from "cors";
 
 const port = process.env.PORT || 3000;
 
