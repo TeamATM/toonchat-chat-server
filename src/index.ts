@@ -11,6 +11,7 @@ import { TypeServer } from "./types";
 import router from "./chat/chatRouter";
 import { handleConnection } from "./socket/handler";
 import logger from "./logger";
+import loggingMiddleware from "./middleware/logger";
 
 const port = process.env.PORT || 3000;
 
@@ -18,8 +19,9 @@ const app = express();
 const corsOrigin = process.env.CORS_ALLOW_ORIGIN || "http://localhost:3000";
 app.use(cors({
     origin: corsOrigin,
-}));
+}), loggingMiddleware);
 logger.info(`allowed cors origin: ${corsOrigin}`);
+// app.use(loggingMiddleware);
 app.use("/chat", authenticateRequest, router);
 app.get("/health", (req, res) => res.status(200).send("ok"));
 
