@@ -19,7 +19,9 @@ router.get("/history/:id", async (req, res) => {
 
         return res.status(200).json(result);
     } catch (err) {
-        logger.error(err);
+        logger.error({
+            err, userId, characterId, remoteHost: req.ip, url: req.url,
+        }, "failed to process fetch chat history");
         return res.status(500);
     }
 });
@@ -29,7 +31,9 @@ router.get("/recent", async (req, res) => {
         const recentMessages = await getRecentChat(req.userId!);
         return res.status(200).json(recentMessages);
     } catch (err) {
-        logger.error(err);
+        logger.error({
+            err, remoteHost: req.ip, url: req.url, userId: req.userId,
+        });
         return res.status(500);
     }
 });

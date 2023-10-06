@@ -104,7 +104,6 @@ export async function saveBotMessage(messageFromMQ:MessageFromMQ) {
 
     if (fromUser) return undefined;
 
-    logger.info({ userId, characterId, msg: content });
     logger.debug(messageFromMQ);
 
     try {

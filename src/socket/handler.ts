@@ -85,7 +85,7 @@ async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient)
 export async function handleConnection(socket:TypeSocket) {
     if (!socket.data.username) socket.data.username = `anonymous_${generateRandomId()}`;
 
-    logger.info({ connection: "connected", host: socket.handshake.address });
+    logger.info({ connection: "connected", remoteHost: socket.handshake.address });
 
     try {
         // 구독 && 구독 취소를 위한 정보 저장
@@ -116,6 +116,6 @@ export async function handleConnection(socket:TypeSocket) {
     socket.on("disconnect", () => {
         // 소켓 연결 해제시 구독 취소
         unsubscribe(socket.data.consumerTag);
-        logger.info({ connection: "disconnected", host: socket.handshake.address });
+        logger.info({ connection: "disconnected", remoteHost: socket.handshake.address });
     });
 }
