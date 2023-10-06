@@ -11,9 +11,9 @@ function handleError(err:Error|unknown, remoteAddr:string) {
             // TODO: Do something
         }
 
-        logger.warn({ host: remoteAddr }, `Authentication failed:${err.message}`);
+        logger.warn({ remoteHost: remoteAddr }, `Authentication failed:${err.message}`);
     } else {
-        logger.warn({ host: remoteAddr }, `Authentication failed:${err}`);
+        logger.warn({ remoteHost: remoteAddr }, `Authentication failed:${err}`);
     }
 }
 
