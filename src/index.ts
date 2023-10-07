@@ -4,6 +4,7 @@ import http from "http";
 
 import "./config";
 import cors from "cors";
+import helmet from "helmet";
 import { subscribe } from "./message_queue/broker";
 import { authenticateSocket, authenticateRequest } from "./middleware/auth";
 import { connectToMongo, saveBotMessage } from "./mongo/mongodb";
@@ -17,7 +18,7 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 const corsOrigin = process.env.CORS_ALLOW_ORIGIN || "http://localhost:3000";
-app.use(cors({
+app.use(helmet({ hsts: true, frameguard: true, xXssProtection: true }), cors({
     origin: corsOrigin,
 }), loggingMiddleware);
 logger.info(`allowed cors origin: ${corsOrigin}`);
