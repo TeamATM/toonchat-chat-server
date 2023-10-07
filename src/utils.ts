@@ -43,15 +43,19 @@ export function getCurrentDate(today: Date) {
 
 export function getRemoteHost(req:Request|TypeSocket) {
     if ("ip" in req) {
-        const realRemoteAddress = req.header("x-forwarded-for");
+        const realRemoteAddress = req.headers.forwarded;
         if (realRemoteAddress !== undefined) {
             return realRemoteAddress;
         }
-        logger.debug(req.headers);
+        logger.warn(req.headers);
         return req.ip;
     }
     if ("handshake" in req) {
-        logger.debug(req.handshake.headers);
+        const realRemoteAddress = req.handshake.headers.forwarded;
+        if (realRemoteAddress !== undefined) {
+            return realRemoteAddress;
+        }
+        logger.warn(req.handshake.headers);
         return req.handshake.address;
     }
     return undefined;
