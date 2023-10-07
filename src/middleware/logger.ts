@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import logger from "../logger";
+import { getRemoteHost } from "../utils";
 
 const loggerMiddleware:RequestHandler = (req, res, next) => {
     if (req.path === "/health") {
@@ -12,7 +13,7 @@ const loggerMiddleware:RequestHandler = (req, res, next) => {
     } = req;
 
     logger.info({
-        method, url, params, query, body, remoteHost: req.ip,
+        method, url, params, query, body, remoteHost: getRemoteHost(req),
     });
 
     next();
