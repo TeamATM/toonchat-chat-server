@@ -4,16 +4,17 @@ import { RequestHandler } from "express";
 import { validateAndDecodeJwtToken } from "../jwt";
 import { TypeSocket } from "../types";
 import logger from "../logger";
+import { getRemoteHost } from "../utils";
 
-function handleError(err:Error|unknown, remoteAddr:string) {
+function handleError(err:Error|unknown, remoteAddr?:string|string[]) {
     if (err instanceof Error) {
         if (err instanceof TokenExpiredError) {
             // TODO: Do something
         }
 
-        logger.warn({ remoteHost: remoteAddr }, `Authentication failed:${err.message}`);
+        logger.warn({ remoteHost: remoteAddr }, `Authentication failed: ${err.message}`);
     } else {
-        logger.warn({ remoteHost: remoteAddr }, `Authentication failed:${err}`);
+        logger.warn({ remoteHost: remoteAddr }, `Authentication failed: ${err}`);
     }
 }
 
@@ -29,7 +30,7 @@ export const authenticateSocket = (socket:TypeSocket, next: (err?: Error) => voi
         socket.data.username = decodedToken.sub;
         next();
     } catch (err) {
-        handleError(err, socket.handshake.address);
+        handleError(err, getRemoteHost(socket));
         socket.disconnect(true);
         next(new Error("Authentication failed"));
     }
@@ -59,7 +60,7 @@ export const authenticateRequest:RequestHandler = (req, res, next) => {
             req.userId = decodedToken.sub;
             next();
         } catch (err) {
-            handleError(err, req.ip);
+            handleError(err, getRemoteHost(req));
             res.sendStatus(401); // 인증 정보 없음
         }
     } else {
