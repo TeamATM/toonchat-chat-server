@@ -2,9 +2,9 @@
 import { MongooseError } from "mongoose";
 import logger from "../logger";
 import { publish, subscribe, unsubscribe } from "../message_queue/broker";
-import { buildEchoMessage, buildInferenceMessage } from "../message_queue/util";
+import { buildInferenceMessage } from "../message_queue/util";
 import {
-    saveUserMessage, findSimilarDocuments, getCharacterPersona,
+    echoUserMessageAndUpdateHistory, searchSimilarDocuments, getCharacterPersona,
 } from "../mongo/mongodb";
 import { existMessageInProcess } from "../redis/redis";
 import { MessageFromClient, TypeSocket } from "../types";
@@ -26,7 +26,7 @@ async function checkCanRequest(userId:string, characterId:number, content:string
     const persona = await getCharacterPersona(characterId);
     if (persona === undefined) {
         const msg = "Invalid characterId";
-        logger.warn({ userId, characterId, content }, msg);
+        logger.error({ userId, characterId, content }, msg);
         throw new InvalidRequestError(msg);
     }
 
@@ -40,7 +40,7 @@ async function checkCanRequest(userId:string, characterId:number, content:string
     return persona;
 }
 
-function publishMessage(
+function publishInferenceRequestMessage(
     promiseResult: [HistoryDocument?, EmbeddingDocument[]?],
     userId: string,
     persona:PersonaDocument,
@@ -52,10 +52,8 @@ function publishMessage(
     }
 
     logger.trace({ userId, characterId: history.characterId, msg: history });
-    logger.debug(history, `history of user: ${userId}`);
+    logger.debug(history, "history of user: {}", userId);
 
-    // publish or echo
-    publish("amq.topic", userId, buildEchoMessage(history));
     // publish for inference
     publish("celery", "celery", buildInferenceMessage(history, persona, vectorSearchResult));
 }
@@ -74,10 +72,10 @@ async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient)
 
     // 몽고디비 연결해서 메시지 저장 & 이전 대화내역 가져오기 => 메시지큐 전달
     Promise.all([
-        saveUserMessage(userId, data.characterId, data.content),
-        findSimilarDocuments(data.content),
+        echoUserMessageAndUpdateHistory(userId, data.characterId, data.content),
+        searchSimilarDocuments(data.content),
     ]).then((result) => {
-        publishMessage(result, userId, persona);
+        publishInferenceRequestMessage(result, userId, persona);
     }).catch((err) => { logger.error(err); });
 }
 

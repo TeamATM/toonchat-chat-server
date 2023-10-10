@@ -8,6 +8,8 @@ import { getCurrentDate, getEmbedding } from "../utils";
 import {
     EmbeddingDocument, HistoryDocument, MessageDocument, PersonaDocument,
 } from "./types";
+import { publish } from "../message_queue/broker";
+import { buildEchoMessage } from "../message_queue/util";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/";
 const historyLength = Number(process.env.CHAT_HISTORY_LENGTH) || 10;
@@ -58,7 +60,7 @@ async function updateHistory(userId: string, characterId: number, msg: Message) 
     );
 }
 
-async function saveMessage(
+async function updateMessageAndHistory(
     userId:string,
     characterId:number,
     message:string,
@@ -88,16 +90,21 @@ async function saveMessage(
     }
 }
 
-export async function saveUserMessage(userId:string, characterId:number, message:string) {
-    try {
-        return saveMessage(userId, characterId, message, true, undefined);
-    } catch (err) {
-        logger.error(err);
-        return undefined;
-    }
+export async function echoUserMessageAndUpdateHistory(userId:string, characterId:number, message:string) {
+    return updateMessageAndHistory(userId, characterId, message, true, undefined)
+        .then((history) => {
+            if (history) {
+                publish("amq.topic", userId, buildEchoMessage(history));
+            }
+            return history;
+        })
+        .catch((err) => {
+            logger.error(err);
+            return undefined;
+        });
 }
 
-export async function saveBotMessage(messageFromMQ:MessageFromMQ) {
+export async function updateBotMessage(messageFromMQ:MessageFromMQ) {
     const {
         userId, characterId, content, messageId, fromUser,
     } = messageFromMQ;
@@ -107,7 +114,7 @@ export async function saveBotMessage(messageFromMQ:MessageFromMQ) {
     logger.debug(messageFromMQ);
 
     try {
-        return saveMessage(userId, characterId, content, false, messageId);
+        return updateMessageAndHistory(userId, characterId, content, false, messageId);
     } catch (err) {
         logger.error(err);
         return undefined;
@@ -190,7 +197,7 @@ export async function _findSimilarDocuments(vector:number[]) {
     }
 }
 
-export async function findSimilarDocuments(userInput:string) {
+export async function searchSimilarDocuments(userInput:string) {
     const embeddingVector = await getEmbedding(userInput);
     if (!embeddingVector) return undefined;
 
