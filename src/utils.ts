@@ -47,7 +47,7 @@ export function getRemoteHost(req:Request|TypeSocket) {
         if (realRemoteAddress !== undefined) {
             return realRemoteAddress;
         }
-        logger.warn(req.headers);
+        logger.warn(req.headers, "Can not find x-forwarded-for header in request with url {}", req.url);
         return req.ip;
     }
     if ("handshake" in req) {
@@ -55,7 +55,7 @@ export function getRemoteHost(req:Request|TypeSocket) {
         if (realRemoteAddress !== undefined) {
             return realRemoteAddress;
         }
-        logger.warn(req.handshake.headers);
+        logger.warn(req.handshake.headers, "Can not find x-forwarded-for header in socket");
         return req.handshake.address;
     }
     return undefined;
