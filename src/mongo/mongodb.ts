@@ -115,7 +115,9 @@ export async function saveBotMessage(messageFromMQ:MessageFromMQ) {
 }
 
 async function getChatHistoryLtDate(userId:string, characterId:number, dateBefore: Date, limit?: number) {
-    let query = MessageModel.find<MessageDocument>({ userId, characterId, date: { $lt: dateBefore } });
+    let query = MessageModel
+        .find<MessageDocument>({ userId, characterId, date: { $lt: dateBefore } })
+        .sort({ date: 1 });
     if (limit) query = query.limit(limit);
 
     return query.exec();
