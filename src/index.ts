@@ -7,7 +7,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { subscribe } from "./message_queue/broker";
 import { authenticateSocket, authenticateRequest } from "./middleware/auth";
-import { connectToMongo, saveBotMessage } from "./mongo/mongodb";
+import { connectToMongo, updateBotMessage } from "./mongo/mongodb";
 import { TypeServer } from "./types";
 import router from "./chat/chatRouter";
 import { handleConnection } from "./socket/handler";
@@ -40,7 +40,7 @@ const io = new TypeServer(server, {
 
 connectToMongo();
 
-subscribe("defaultListener", "#", { durable: true, autoDelete: false }, async (msg) => saveBotMessage(msg)
+subscribe("defaultListener", "#", { durable: true, autoDelete: false }, async (msg) => updateBotMessage(msg)
     .then(() => true)
     .catch((err) => {
         logger.error(err, `failed to save message:\n${msg}`);
