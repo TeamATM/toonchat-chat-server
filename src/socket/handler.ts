@@ -14,6 +14,66 @@ import { InvalidRequestError } from "../exception";
 
 const maxMessageLength = Number(process.env.MAX_MESSAGE_LENGTH) || 100;
 
+// eslint-disable-next-line import/prefer-default-export
+export async function handleConnection(socket:TypeSocket) {
+    if (!socket.data.username) socket.data.username = `anonymous_${generateRandomId()}`;
+
+    logger.info({ connection: "connected", remoteHost: getRemoteHost(socket) });
+
+    try {
+        // 구독 && 구독 취소를 위한 정보 저장
+        const consumerTag = await subscribe(
+            `${socket.data.username}_${generateRandomId()}`,
+            socket.data.username,
+            { durable: false, autoDelete: true },
+            async (msg) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { userId, ...messageToClient } = msg;
+                return socket.emit("subscribe", messageToClient);
+            },
+        );
+        socket.data.consumerTag = consumerTag;
+    } catch (err) {
+        logger.fatal(err, `failed to subscribe user: ${socket.data.username}`);
+    }
+
+    socket.on("publish", (data: MessageFromClient) => {
+        try {
+            handleOnPublishMessage(socket, data);
+        } catch (err) {
+            logger.fatal(err, "Unhandled Exception while processing function handleOnPublishMessage.");
+            socket.disconnect(true);
+        }
+    });
+
+    socket.on("disconnect", () => {
+        // 소켓 연결 해제시 구독 취소
+        unsubscribe(socket.data.consumerTag);
+        logger.info({ connection: "disconnected", remoteHost: getRemoteHost(socket) });
+    });
+}
+
+async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient) {
+    const { username: userId } = socket.data;
+    let persona:PersonaDocument;
+
+    try {
+        persona = await checkCanRequest(userId, data.characterId, data.content);
+    } catch (err) {
+        if (err instanceof Error) socket.emit("error", { content: err.message });
+        else logger.fatal(err, "Unhandled Exception");
+        return;
+    }
+
+    // 몽고디비 연결해서 메시지 저장 & 이전 대화내역 가져오기 => 메시지큐 전달
+    Promise.all([
+        echoUserMessageAndUpdateHistory(userId, data.characterId, data.content),
+        searchSimilarDocuments(data.content),
+    ]).then((result) => {
+        publishInferenceRequestMessage(result, userId, persona);
+    }).catch((err) => { logger.error(err); });
+}
+
 async function checkCanRequest(userId:string, characterId:number, content:string) {
     // 글자수 제한
     if (!content || content.length > maxMessageLength) {
@@ -56,64 +116,4 @@ function publishInferenceRequestMessage(
 
     // publish for inference
     publish("celery", "celery", buildInferenceMessage(history, persona, vectorSearchResult));
-}
-
-async function handleOnPublishMessage(socket:TypeSocket, data:MessageFromClient) {
-    const { username: userId } = socket.data;
-    let persona:PersonaDocument;
-
-    try {
-        persona = await checkCanRequest(userId, data.characterId, data.content);
-    } catch (err) {
-        if (err instanceof Error) socket.emit("error", { content: err.message });
-        else logger.fatal(err, "Unhandled Exception");
-        return;
-    }
-
-    // 몽고디비 연결해서 메시지 저장 & 이전 대화내역 가져오기 => 메시지큐 전달
-    Promise.all([
-        echoUserMessageAndUpdateHistory(userId, data.characterId, data.content),
-        searchSimilarDocuments(data.content),
-    ]).then((result) => {
-        publishInferenceRequestMessage(result, userId, persona);
-    }).catch((err) => { logger.error(err); });
-}
-
-// eslint-disable-next-line import/prefer-default-export
-export async function handleConnection(socket:TypeSocket) {
-    if (!socket.data.username) socket.data.username = `anonymous_${generateRandomId()}`;
-
-    logger.info({ connection: "connected", remoteHost: getRemoteHost(socket) });
-
-    try {
-        // 구독 && 구독 취소를 위한 정보 저장
-        const consumerTag = await subscribe(
-            `${socket.data.username}_${generateRandomId()}`,
-            socket.data.username,
-            { durable: false, autoDelete: true },
-            async (msg) => {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { userId, ...messageToClient } = msg;
-                return socket.emit("subscribe", messageToClient);
-            },
-        );
-        socket.data.consumerTag = consumerTag;
-    } catch (err) {
-        logger.fatal(err, `failed to subscribe user: ${socket.data.username}`);
-    }
-
-    socket.on("publish", (data: MessageFromClient) => {
-        try {
-            handleOnPublishMessage(socket, data);
-        } catch (err) {
-            logger.fatal(err, "Unhandled Exception while processing function handleOnPublishMessage.");
-            socket.disconnect(true);
-        }
-    });
-
-    socket.on("disconnect", () => {
-        // 소켓 연결 해제시 구독 취소
-        unsubscribe(socket.data.consumerTag);
-        logger.info({ connection: "disconnected", remoteHost: getRemoteHost(socket) });
-    });
 }
