@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { getChatHistoryAll, getRecentChat } from "../mongo/mongodb";
+import { getChatHistoryAll, getRecentChat } from "../service";
 import logger from "../logger";
-import { Message } from "../message_queue/types";
+import { Message } from "../message_queue";
 import { getRemoteHost } from "../utils";
 
-const router = Router();
+// eslint-disable-next-line import/prefer-default-export
+export const chatRouter = Router();
 
-router.get("/history/:id", async (req, res) => {
+chatRouter.get("/history/:id", async (req, res) => {
     const { id: characterId } = req.params;
     // const { date, limit } = req.query;
     const userId = req.userId!;
@@ -27,7 +28,7 @@ router.get("/history/:id", async (req, res) => {
     }
 });
 
-router.get("/recent", async (req, res) => {
+chatRouter.get("/recent", async (req, res) => {
     try {
         const recentMessages = await getRecentChat(req.userId!);
         return res.status(200).json(recentMessages);
@@ -38,5 +39,3 @@ router.get("/recent", async (req, res) => {
         return res.status(500);
     }
 });
-
-export default router;

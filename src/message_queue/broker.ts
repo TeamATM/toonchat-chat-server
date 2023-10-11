@@ -1,6 +1,7 @@
-import { Options, Channel, connect } from "amqplib";
+// eslint-disable-next-line object-curly-newline
+import { Options, Channel, connect, ConsumeMessage } from "amqplib";
 import { createPool, Pool } from "generic-pool";
-import { SubscribeProcessType } from "../types";
+import { SubscribeProcessType } from "../socket";
 import { MessageFromMQ, PublishMessage } from "./types";
 import logger from "../logger";
 
@@ -19,10 +20,7 @@ const amqpPool: Pool<Channel> = createPool({
         await channel.close();
         await connection.close();
     },
-}, {
-    min: 1,
-    max: 10,
-});
+}, { min: 1, max: 10 });
 
 async function publish(exchangeName:string, routingKey: string, message:PublishMessage) {
     const channel = await amqpPool.acquire();
@@ -59,10 +57,22 @@ async function subscribe(
     queueName:string,
     bindPattern:string,
     queueOptions:Options.AssertQueue,
-    proc:SubscribeProcessType,
+    onMessageRecieved:SubscribeProcessType,
     exchangeName?:string,
 ) {
     const channel = await amqpPool.acquire();
+
+    const messageCallback = async (message:ConsumeMessage | null) => {
+        if (message === null) return;
+        const messageFromMq:MessageFromMQ = JSON.parse(message.content.toString("utf-8"));
+
+        if (await onMessageRecieved(messageFromMq)) {
+            channel.ack(message); // 정상적으로 수신 완료
+        } else {
+            logger.fatal("NACK");
+            channel.nack(message); // 오류 발생
+        }
+    };
 
     let consumerTag:string = "";
     try {
@@ -70,17 +80,7 @@ async function subscribe(
         await channel.bindQueue(queueName, exchangeName || defaultSubscribeExchange, bindPattern);
 
         // consumerTag = 소켓 연결이 끊어졌을때 구독 취소를 위한 정보
-        consumerTag = (await channel.consume(queueName, async (msg) => {
-            if (msg === null) return;
-            const messageFromMq:MessageFromMQ = JSON.parse(msg.content.toString("utf-8"));
-
-            if (await proc(messageFromMq)) {
-                channel.ack(msg); // 정상적으로 수신 완료
-            } else {
-                logger.fatal("NACK");
-                channel.nack(msg); // 오류 발생
-            }
-        })).consumerTag;
+        consumerTag = (await channel.consume(queueName, messageCallback)).consumerTag;
     } catch (err) {
         logger.fatal(err);
     } finally {

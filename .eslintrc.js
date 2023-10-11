@@ -9,24 +9,14 @@ module.exports = {
         "airbnb",
         "airbnb/hooks",
     ],
-    settings: {
-        "import/resolver": {
-            node: {
-                extensions: [".js", ".jsx", ".ts", ".tsx"],
-            },
-        },
-    },
+    settings: { "import/resolver": { node: { extensions: [".js", ".jsx", ".ts", ".tsx"] } } },
     overrides: [
         {
-            env: {
-                node: true,
-            },
+            env: { node: true },
             files: [
                 ".eslintrc.{js,cjs}",
             ],
-            parserOptions: {
-                sourceType: "script",
-            },
+            parserOptions: { sourceType: "script" },
         },
     ],
     parser: "@typescript-eslint/parser",

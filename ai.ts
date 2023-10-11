@@ -1,11 +1,11 @@
 import "./src/config";
 import logger from "./src/logger";
-import { subscribe, publish } from "./src/message_queue/broker";
-import { MessageFromMQ, MessageToAI } from "./src/message_queue/types";
+// eslint-disable-next-line object-curly-newline
+import { subscribe, publish, MessageFromMQ, MessageToAI } from "./src/message_queue";
 
 subscribe("celery", "celery", { durable: true, autoDelete: false }, async (msg) => {
     const tmp:MessageToAI = msg as unknown as MessageToAI;
-    logger.info(tmp);
+    logger.trace(tmp);
 
     try {
         const data:MessageFromMQ = {

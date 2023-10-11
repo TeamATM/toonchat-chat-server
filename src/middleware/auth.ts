@@ -2,7 +2,7 @@
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { RequestHandler } from "express";
 import { validateAndDecodeJwtToken } from "../jwt";
-import { TypeSocket } from "../types";
+import { TypeSocket } from "../socket";
 import logger from "../logger";
 import { getRemoteHost } from "../utils";
 

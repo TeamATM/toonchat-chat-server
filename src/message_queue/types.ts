@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { MessageToClient } from "../types";
+import { MessageToClient } from "../socket/types";
 import { HistoryDocument } from "../mongo/types";
 
 export interface Chat {

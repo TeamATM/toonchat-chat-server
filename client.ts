@@ -3,17 +3,22 @@ import readline from "readline";
 import "./src/config";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Socket, io } from "socket.io-client";
-import { ClientToServerEvents, ServerToClientEvents } from "./src/types";
+import { ClientToServerEvents, ServerToClientEvents } from "./src/socket";
 import logger from "./src/logger";
+import { Message } from "./src/message_queue";
 
+// const host = "https://chat.webtoonchat.com";
+const host = "http://localhost";
 const secret = process.env.SECRET || "secret";
-const token = jwt.sign({ sub: "user1", role: "user" }, secret);
+console.log(secret);
+const token = jwt.sign({ sub: "user1", role: "user" }, `${secret}`);
+console.log(token);
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
 });
 
-const socket:Socket<ServerToClientEvents, ClientToServerEvents> = io("http://localhost:3000/", {
+const socket:Socket<ServerToClientEvents, ClientToServerEvents> = io(host, {
     path: "/ws",
     auth: {
         token,
@@ -32,9 +37,13 @@ function question(query:string) {
 const header:Headers = new Headers();
 header.set("Authorization", `Bearer ${token}`);
 fetch(
-    "http://localhost:3000/chat/history/0",
+    `${host}/chat/history/0`,
     { headers: header },
-).then(async (res) => { console.log(await res.json()); });
+).then(async (res) => {
+    const j:Message[] = await res.json();
+    const h = j.reduce((prev, cur) => { prev.push(cur.content); return prev; }, new Array<string>());
+    console.log(h);
+});
 /**
 [
   {
@@ -75,7 +84,7 @@ fetch(
 ]
 */
 fetch(
-    "http://localhost:3000/chat/recent",
+    `${host}/chat/recent`,
     { headers: header },
 ).then(async (res) => { console.log(await res.json()); });
 
@@ -109,6 +118,7 @@ socket.on("connect", async () => {
     socket.on("subscribe", (msg) => {
         // logger.info(msg);
         console.log(msg);
+        console.log(typeof msg.createdAt);
     });
 
     // 에러 발생 ex) 길이 제한, 요청 제한...
@@ -119,6 +129,6 @@ socket.on("connect", async () => {
     while (true) {
         // eslint-disable-next-line no-await-in-loop
         const input = String(await question("Input: "));
-        socket.emit("publish", { content: input, characterId: 1 });
+        socket.emit("publish", { content: input, characterId: 0 });
     }
 });
