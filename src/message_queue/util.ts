@@ -46,7 +46,7 @@ function buildMessage(content:string, fromUser:boolean, messageId?:string):Messa
     return {
         messageId: new Types.ObjectId((messageId && Types.ObjectId.isValid(messageId)) ? messageId : undefined),
         replyMessageId: fromUser ? new Types.ObjectId() : undefined,
-        fromUser: true,
+        fromUser,
         content,
         createdAt: new Date(),
     };
