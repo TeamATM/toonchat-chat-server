@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import { Message } from "../message_queue/types";
+import { Message } from "../message_queue";
 import {
     EmbeddingDocument, HistoryDocument, MessageDocument, PersonaDocument,
 } from "./types";
@@ -32,7 +32,7 @@ export const personaSchema = new Schema<PersonaDocument>({
     persona: Array<string>,
 });
 
-messageSchema.index({ userId: 1, characterId: 1, date: -1 });
+messageSchema.index({ userId: 1, characterId: 1, date: 1 });
 historySchema.index({ userId: 1, characterId: 1 });
 embeddingSchema.index({ sourceId: 1 });
 

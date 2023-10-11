@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { Server, Socket } from "socket.io";
-import { Chat, MessageFromMQ } from "./message_queue/types";
+import { Chat, MessageFromMQ } from "../message_queue";
 
 export interface MessageFromClient {
     content: string,
@@ -39,6 +39,7 @@ export interface SocketData {
     username: string;
     role: string;
     consumerTag: string;
+    remoteAddress: string;
 }
 
 export type TypeSocket = Socket<
