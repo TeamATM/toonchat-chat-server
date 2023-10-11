@@ -58,6 +58,7 @@ module.exports = {
             "error",
             120,
         ],
+        "no-use-before-define": "warn",
         "no-array-constructor": [
             "off",
         ],
