@@ -13,9 +13,9 @@ export const loggerMiddleware:RequestHandler = (req, res, next) => {
         method, url, params, query, body,
     } = req;
 
-    logger.info({
-        method, url, params, query, body, remoteHost: getRemoteHost(req),
-    });
-
     next();
+
+    logger.info({
+        method, url, params, query, body, remoteHost: getRemoteHost(req), statusCode: res.statusCode,
+    });
 };
