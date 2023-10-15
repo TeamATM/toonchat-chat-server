@@ -23,6 +23,15 @@ export async function updateHistory(userId: string, characterId: number, msg: Me
     }
 }
 
+export function findHistoryByUserIdAndCharacterId(userId: string, characterId: number) {
+    try {
+        return HistoryModel.findOne<HistoryDocument>({ userId, characterId }).exec();
+    } catch (err) {
+        logger.error(err);
+        return null;
+    }
+}
+
 async function getChatHistoryLtDate(userId: string, characterId: number, dateBefore: Date, limit?: number) {
     let query = MessageModel
         .find<MessageDocument>({ userId, characterId, date: { $lt: dateBefore } })
