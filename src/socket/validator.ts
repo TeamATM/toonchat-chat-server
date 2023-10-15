@@ -13,7 +13,7 @@ export async function checkCanRequest(userId: string, characterId: number, conte
     }
 
     // 한 계정당 동시 요청 가능 개수 제한
-    if (await existMessageInProcess(userId)) {
+    if (await existMessageInProcess(userId, characterId)) {
         const msg = "아직 처리중인 메시지가 있습니다. 이전 요청이 처리된 이후에 다시 시도하세요";
         logger.warn({ userId, characterId, content }, msg);
         throw new InvalidRequestError(msg);
