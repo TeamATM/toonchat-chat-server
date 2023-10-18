@@ -64,12 +64,23 @@ export async function getRecentChat(userId: string) {
                 },
             },
             {
+                $lookup: {
+                    from: "characters",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "characterInfo",
+                },
+            },
+            { $unwind: "$characterInfo" },
+            {
                 $project: {
                     _id: 0,
                     characterId: "$_id",
                     lastMessage: 1,
+                    characterInfo: 1,
                 },
             },
+            { $project: { "characterInfo.persona": 0 } },
         ]).exec();
 
         return recentMessages;
