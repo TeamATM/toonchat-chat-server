@@ -24,7 +24,12 @@ export interface EmbeddingDocument extends Document {
     embeddingVector: Array<number>,
 }
 
-export interface PersonaDocument extends Document {
+export interface CharacterDocument extends Document {
     _id: number,
+    name: string
+    profileImageUrl: string,
+    backgroundImageUrl: string,
+    stateMessage: string,
+    hashTag: string,
     persona: string[],
 }
