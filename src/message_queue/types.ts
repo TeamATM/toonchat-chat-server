@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
+import { Channel, ConsumeMessage } from "amqplib";
 import { MessageToClient } from "../socket/types";
-import { HistoryDocument } from "../mongo/types";
+import { CharacterDocument, HistoryDocument } from "../mongo/types";
 
 export interface Chat {
     fromUser: boolean;
@@ -36,4 +37,11 @@ export interface MessageToAI {
     kwargs: Map<string, string>;
 }
 
+export interface CharacterUpdateMessage extends CharacterDocument {
+    op: string;
+}
+
 export type PublishMessage = MessageToAI | MessageToClient;
+
+// eslint-disable-next-line no-unused-vars
+export type ConsumeMessageCallback = (channel: Channel, message: ConsumeMessage|null) => Promise<void>;

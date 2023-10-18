@@ -1,9 +1,13 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // eslint-disable-next-line object-curly-newline
-import { Options, Channel, connect, ConsumeMessage } from "amqplib";
+import { Options, Channel, connect } from "amqplib";
 import { createPool, Pool } from "generic-pool";
 import { SubscribeProcessType } from "../socket";
-import { MessageFromMQ, PublishMessage } from "./types";
+// eslint-disable-next-line object-curly-newline
+import { CharacterUpdateMessage, ConsumeMessageCallback, MessageFromMQ, PublishMessage } from "./types";
 import logger from "../logger";
+import { deleteCharacterInformation, upsertCharacterInformation } from "../service";
 
 const amqpUrl = process.env.AMQP_URL || "amqp://localhost:5672";
 const defaultSubscribeExchange = "amq.topic";
@@ -53,26 +57,15 @@ function unsubscribe(consumerTag: string) {
     });
 }
 
+// TODO: Unhandled exception 단순 ack 아니고 따로 처리 or 다른 큐로 보내서 2차 시도 후 버리기
 async function subscribe(
-    queueName:string,
-    bindPattern:string,
-    queueOptions:Options.AssertQueue,
-    onMessageRecieved:SubscribeProcessType,
-    exchangeName?:string,
+    queueName: string,
+    bindPattern: string,
+    queueOptions: Options.AssertQueue,
+    callback: ConsumeMessageCallback,
+    exchangeName: string = defaultSubscribeExchange,
 ) {
     const channel = await amqpPool.acquire();
-
-    const messageCallback = async (message:ConsumeMessage | null) => {
-        if (message === null) return;
-        const messageFromMq:MessageFromMQ = JSON.parse(message.content.toString("utf-8"));
-
-        if (await onMessageRecieved(messageFromMq)) {
-            channel.ack(message); // 정상적으로 수신 완료
-        } else {
-            logger.fatal("NACK");
-            channel.nack(message); // 오류 발생
-        }
-    };
 
     let consumerTag:string = "";
     try {
@@ -80,7 +73,11 @@ async function subscribe(
         await channel.bindQueue(queueName, exchangeName || defaultSubscribeExchange, bindPattern);
 
         // consumerTag = 소켓 연결이 끊어졌을때 구독 취소를 위한 정보
-        consumerTag = (await channel.consume(queueName, messageCallback)).consumerTag;
+        consumerTag = (await channel.consume(
+            queueName,
+            (msg) => callback(channel, msg)
+                .catch((reason) => { channel.ack(msg!); logger.fatal(reason); }),
+        )).consumerTag;
     } catch (err) {
         logger.fatal(err);
     } finally {
@@ -93,6 +90,52 @@ async function subscribe(
     return consumerTag;
 }
 
+async function subscribeChatMessage(
+    queueName:string,
+    bindPattern:string,
+    queueOptions:Options.AssertQueue,
+    onMessageRecieved:SubscribeProcessType,
+    exchangeName?:string,
+) {
+    const callback:ConsumeMessageCallback = async (channel, message) => {
+        if (message === null) return;
+        const messageFromMq:MessageFromMQ = JSON.parse(message.content.toString("utf-8"));
+
+        if (await onMessageRecieved(messageFromMq)) {
+            channel.ack(message); // 정상적으로 수신 완료
+        } else {
+            logger.fatal("NACK");
+            channel.nack(message); // 오류 발생
+        }
+    };
+
+    return subscribe(queueName, bindPattern, queueOptions, callback, exchangeName);
+}
+
+async function subscribeCharacterUpdateMessage(
+    queueName:string,
+    bindPattern:string,
+    queueOptions:Options.AssertQueue,
+    exchangeName?:string,
+) {
+    const callback:ConsumeMessageCallback = async (channel, message) => {
+        if (!message) return;
+        const characterUpdateMessage:CharacterUpdateMessage = JSON.parse(message.content.toString("utf-8"));
+
+        const handler = characterUpdateMessage.op?.toLowerCase() === "delete"
+            ? deleteCharacterInformation : upsertCharacterInformation;
+
+        if (await handler(characterUpdateMessage)) {
+            channel.ack(message);
+        } else {
+            logger.fatal("NACK");
+            channel.nack(message);
+        }
+    };
+
+    return subscribe(queueName, bindPattern, queueOptions, callback, exchangeName);
+}
+
 export {
-    publish, subscribe, unsubscribe,
+    publish, subscribeChatMessage, subscribeCharacterUpdateMessage, unsubscribe,
 };

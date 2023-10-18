@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { subscribe, MessageFromMQ } from "../message_queue";
+import { subscribeChatMessage, MessageFromMQ } from "../message_queue";
 import { TypeSocket } from "./types";
 import { generateRandomId } from "../utils";
 
@@ -13,7 +13,7 @@ export async function subscribeMessageQueue(socket: TypeSocket) {
 
     // 구독 && 구독 취소를 위한 정보 저장
     const queueName = `${socket.data.username}_${generateRandomId()}`;
-    const consumerTag = await subscribe(
+    const consumerTag = await subscribeChatMessage(
         queueName,
         socket.data.username,
         { durable: false, autoDelete: true },

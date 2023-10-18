@@ -9,4 +9,4 @@ import {
 export const MessageModel = mongoose.model<MessageDocument>("message", messageSchema);
 export const HistoryModel = mongoose.model<HistoryDocument>("history", historySchema);
 export const EmbeddingModel = mongoose.model<EmbeddingDocument>("embedding", embeddingSchema);
-export const CharacterModel = mongoose.model<CharacterDocument>("persona", characterSchema);
+export const CharacterModel = mongoose.model<CharacterDocument>("character", characterSchema);

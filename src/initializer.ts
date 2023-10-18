@@ -3,8 +3,8 @@ import helmet from "helmet";
 import http from "http";
 import express from "express";
 import logger from "./logger";
-// eslint-disable-next-line object-curly-newline
-import { buildBotMessage, Message, MessageFromMQ, subscribe } from "./message_queue";
+// eslint-disable-next-line object-curly-newline, max-len
+import { buildBotMessage, Message, MessageFromMQ, subscribeCharacterUpdateMessage, subscribeChatMessage } from "./message_queue";
 import { updateHistory, updateMessage } from "./service";
 import { authenticateSocket, authenticateRequest, loggerMiddleware } from "./middleware";
 import { connectToMongo } from "./mongo";
@@ -62,6 +62,13 @@ export default function initServer() {
 
     connectToMongo();
 
-    subscribe("defaultListener", "#", { durable: true, autoDelete: false }, onMessageToDefaultListener)
+    subscribeChatMessage("defaultListener", "#", { durable: true, autoDelete: false }, onMessageToDefaultListener)
         .catch((err) => logger.fatal(err, "failed to subscribe defaultQueue"));
+
+    subscribeCharacterUpdateMessage(
+        "characterEventListener",
+        "characterUpdate",
+        { durable: true, autoDelete: false },
+        "toonchatEvent",
+    ).catch((err) => logger.fatal(err, "failed to subscribe event"));
 }
