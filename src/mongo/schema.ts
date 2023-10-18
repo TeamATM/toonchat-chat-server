@@ -1,7 +1,7 @@
 import { Schema } from "mongoose";
 import { Message } from "../message_queue";
 import {
-    EmbeddingDocument, HistoryDocument, MessageDocument, PersonaDocument,
+    EmbeddingDocument, HistoryDocument, MessageDocument, CharacterDocument,
 } from "./types";
 
 export const messageSchema = new Schema<MessageDocument>({
@@ -27,8 +27,13 @@ export const embeddingSchema = new Schema<EmbeddingDocument>({
     embeddingVector: Array,
 });
 
-export const personaSchema = new Schema<PersonaDocument>({
+export const characterSchema = new Schema<CharacterDocument>({
     _id: Number,
+    name: String,
+    profileImageUrl: String,
+    backgroundImageUrl: String,
+    stateMessage: String,
+    hashTag: String,
     persona: Array<string>,
 });
 

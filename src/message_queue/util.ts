@@ -1,11 +1,11 @@
 import { MongooseError, Types } from "mongoose";
-import { EmbeddingDocument, HistoryDocument, PersonaDocument } from "../mongo";
+import { EmbeddingDocument, HistoryDocument, CharacterDocument } from "../mongo";
 import { MessageToClient } from "../socket";
 import { Message, MessageToAI } from "./types";
 
 export function buildInferenceMessage(
     history:HistoryDocument,
-    persona?:PersonaDocument,
+    persona?:CharacterDocument,
     reference:EmbeddingDocument[] = [],
 ):MessageToAI {
     const lastMessage = history.messages.at(-1);
