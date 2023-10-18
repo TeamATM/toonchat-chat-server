@@ -1,9 +1,9 @@
-import "./src/config";
-import logger from "./src/logger";
+import "../src/config";
+import logger from "../src/logger";
 // eslint-disable-next-line object-curly-newline
-import { subscribe, publish, MessageFromMQ, MessageToAI } from "./src/message_queue";
+import { subscribeChatMessage, publish, MessageFromMQ, MessageToAI } from "../src/message_queue";
 
-subscribe("celery", "celery", { durable: true, autoDelete: false }, async (msg) => {
+subscribeChatMessage("celery", "celery", { durable: true, autoDelete: false }, async (msg) => {
     const tmp:MessageToAI = msg as unknown as MessageToAI;
     logger.trace(tmp);
 
