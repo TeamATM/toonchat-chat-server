@@ -29,10 +29,10 @@ export const embeddingSchema = new Schema<EmbeddingDocument>({
 
 export const characterSchema = new Schema<CharacterDocument>({
     _id: Number,
-    name: String,
+    characterName: String,
     profileImageUrl: String,
     backgroundImageUrl: String,
-    stateMessage: String,
+    statusMessage: String,
     hashTag: String,
     persona: Array<string>,
 });
