@@ -26,10 +26,10 @@ export interface EmbeddingDocument extends Document {
 
 export interface CharacterDocument extends Document {
     _id: number,
-    name: string
+    characterName: string
     profileImageUrl: string,
     backgroundImageUrl: string,
-    stateMessage: string,
+    statusMessage: string,
     hashTag: string,
     persona: string[],
 }
