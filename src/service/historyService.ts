@@ -82,6 +82,7 @@ export async function getRecentChat(userId: string) {
             },
             { $project: { "characterInfo.persona": 0 } },
             { $addFields: { "characterInfo.characterId": "$characterId" } },
+            { $sort: { "messages.createdAt": -1 } },
         ]).exec();
 
         return recentMessages;
