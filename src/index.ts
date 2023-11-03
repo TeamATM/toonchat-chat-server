@@ -1,5 +1,5 @@
 import "./datadog/tracer";
-import "./config";
+import "./config/config";
 import initServer from "./initializer";
 
 initServer();

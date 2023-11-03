@@ -1,7 +1,7 @@
-import logger from "../logger";
+import logger from "../logging/logger";
 import { getCharacterPersona, existMessageInProcess } from "../service";
 import { MessageFromClient } from "./types";
-import { InvalidRequestError } from "../exception";
+import { InvalidRequestError } from "../exceptions/exception";
 import { maxMessageLength } from "./connectionHandler";
 
 export async function checkCanRequest(userId: string, characterId: number, content: string) {

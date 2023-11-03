@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import logger from "../logger";
+import logger from "../logging/logger";
 import { CharacterModel, CharacterDocument } from "../mongo";
 
 export async function getCharacterPersona(characterId: number) {

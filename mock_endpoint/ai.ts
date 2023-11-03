@@ -1,5 +1,5 @@
-import "../src/config";
-import logger from "../src/logger";
+import "../src/config/config";
+import logger from "../src/logging/logger";
 // eslint-disable-next-line object-curly-newline
 import { subscribeChatMessage, publish, MessageFromMQ, MessageToAI } from "../src/message_queue";
 

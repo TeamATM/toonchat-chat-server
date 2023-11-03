@@ -1,6 +1,6 @@
 import jwt, { JsonWebTokenError } from "jsonwebtoken";
-import { isTokenExist } from "./service";
-import logger from "./logger";
+import { isTokenExist } from "../service";
+import logger from "../logging/logger";
 
 const secret = process.env.SECRET || "secret";
 

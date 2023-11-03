@@ -1,5 +1,5 @@
 import { MongooseError } from "mongoose";
-import logger from "../logger";
+import logger from "../logging/logger";
 import { searchSimilarDocuments } from "../utils";
 import { updateHistory, updateMessage } from "../service";
 import { MessageFromClient, TypeSocket } from "./types";

@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import logger from "../logger";
+import logger from "../logging/logger";
 import { getRemoteHost } from "../utils";
 
 // eslint-disable-next-line import/prefer-default-export

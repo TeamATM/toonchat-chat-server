@@ -6,7 +6,7 @@ import { createPool, Pool } from "generic-pool";
 import { SubscribeProcessType } from "../socket";
 // eslint-disable-next-line object-curly-newline
 import { CharacterUpdateMessage, ConsumeMessageCallback, MessageFromMQ, PublishMessage } from "./types";
-import logger from "../logger";
+import logger from "../logging/logger";
 import { deleteCharacterInformation, upsertCharacterInformation } from "../service";
 
 const amqpUrl = process.env.AMQP_URL || "amqp://localhost:5672";

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getChatHistoryAll, getRecentChat } from "../service";
-import logger from "../logger";
+import logger from "../logging/logger";
 import { Message } from "../message_queue";
 import { getRemoteHost } from "../utils";
 

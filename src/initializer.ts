@@ -2,13 +2,13 @@ import cors from "cors";
 import helmet from "helmet";
 import http from "http";
 import express from "express";
-import logger from "./logger";
+import logger from "./logging/logger";
 // eslint-disable-next-line object-curly-newline, max-len
 import { buildBotMessage, Message, MessageFromMQ, subscribeCharacterUpdateMessage, subscribeChatMessage } from "./message_queue";
 import { updateHistory, updateMessage } from "./service";
 import { authenticateSocket, authenticateRequest, loggerMiddleware } from "./middleware";
 import { connectToMongo } from "./mongo";
-import { chatRouter } from "./router";
+import { chatRouter } from "./routes";
 import { handleConnection, TypeServer } from "./socket";
 
 async function onMessageToDefaultListener(message: MessageFromMQ) {
