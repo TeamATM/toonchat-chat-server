@@ -1,10 +1,9 @@
 import { Router } from "express";
 import { getChatHistoryAll, getRecentChat } from "../service";
-import logger from "../logging/logger";
-import { Message } from "../message_queue";
+import { logger } from "../logging";
+import { Message } from "../types";
 import { getRemoteHost } from "../utils";
 
-// eslint-disable-next-line import/prefer-default-export
 export const chatRouter = Router();
 
 chatRouter.get("/history/:id", async (req, res) => {

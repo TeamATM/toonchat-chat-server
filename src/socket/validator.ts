@@ -1,8 +1,8 @@
-import logger from "../logging/logger";
-import { getCharacterPersona, existMessageInProcess } from "../service";
-import { MessageFromClient } from "./types";
+import { logger } from "../logging";
+import { MessageFromClient } from "../types";
 import { InvalidRequestError } from "../exceptions/exception";
 import { maxMessageLength } from "./connectionHandler";
+import { getCharacterPersona, existMessageInProcess } from "../service";
 
 export async function checkCanRequest(userId: string, characterId: number, content: string) {
     // 글자수 제한

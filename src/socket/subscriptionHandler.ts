@@ -1,11 +1,10 @@
 /* eslint-disable no-param-reassign */
-import { subscribeChatMessage, MessageFromMQ } from "../message_queue";
-import { TypeSocket } from "./types";
+import { subscribeChatMessage } from "../message_queue";
+import { TypeSocket, MessageFromInferenceServer } from "../types";
 import { generateRandomId } from "../utils";
 
-// eslint-disable-next-line import/prefer-default-export
 export async function subscribeMessageQueue(socket: TypeSocket) {
-    const onMessageToUser = async (message: MessageFromMQ) => {
+    const onMessageToUser = async (message: MessageFromInferenceServer) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { userId, ...messageToClient } = message;
         return socket.emit("subscribe", messageToClient);

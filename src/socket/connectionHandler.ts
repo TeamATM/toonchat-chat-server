@@ -1,14 +1,13 @@
 /* eslint-disable no-param-reassign */
-import logger from "../logging/logger";
+import { logger } from "../logging";
 import { unsubscribe } from "../message_queue";
-import { MessageFromClient, TypeSocket } from "./types";
+import { TypeSocket, MessageFromClient } from "../types";
 import { generateRandomId, getRemoteHost } from "../utils";
 import { handleOnPublishMessage } from "./publishHandler";
 import { subscribeMessageQueue } from "./subscriptionHandler";
 
 export const maxMessageLength = Number(process.env.MAX_MESSAGE_LENGTH) || 100;
 
-// eslint-disable-next-line import/prefer-default-export
 export async function handleConnection(socket:TypeSocket) {
     socket.data.username ??= `anonymous_${generateRandomId()}`;
     socket.data.remoteAddress = getRemoteHost(socket);

@@ -1,8 +1,7 @@
 import { RequestHandler } from "express";
-import logger from "../logging/logger";
+import { logger } from "../logging";
 import { getRemoteHost } from "../utils";
 
-// eslint-disable-next-line import/prefer-default-export
 export const loggerMiddleware:RequestHandler = (req, res, next) => {
     if (req.path === "/health") {
         next();

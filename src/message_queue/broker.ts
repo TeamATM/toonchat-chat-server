@@ -1,12 +1,10 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// eslint-disable-next-line object-curly-newline
 import { Options, Channel, connect } from "amqplib";
 import { createPool, Pool } from "generic-pool";
-import { SubscribeProcessType } from "../socket";
-// eslint-disable-next-line object-curly-newline
-import { CharacterUpdateMessage, ConsumeMessageCallback, MessageFromMQ, PublishMessage } from "./types";
-import logger from "../logging/logger";
+import {
+    CharacterUpdateMessage, ConsumeMessageCallback,
+    MessageFromInferenceServer, PublishMessage, SubscribeProcessType,
+} from "../types";
+import { logger } from "../logging";
 import { deleteCharacterInformation, upsertCharacterInformation } from "../service";
 
 const amqpUrl = process.env.AMQP_URL || "amqp://localhost:5672";
@@ -99,7 +97,7 @@ async function subscribeChatMessage(
 ) {
     const callback:ConsumeMessageCallback = async (channel, message) => {
         if (message === null) return;
-        const messageFromMq:MessageFromMQ = JSON.parse(message.content.toString("utf-8"));
+        const messageFromMq:MessageFromInferenceServer = JSON.parse(message.content.toString("utf-8"));
 
         if (await onMessageRecieved(messageFromMq)) {
             channel.ack(message); // 정상적으로 수신 완료
