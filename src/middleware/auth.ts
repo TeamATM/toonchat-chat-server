@@ -1,9 +1,9 @@
 /* eslint-disable no-param-reassign */
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { RequestHandler } from "express";
-import { validateAndDecodeJwtToken } from "../jwt";
+import { validateAndDecodeJwtToken } from "../jwt/jwt";
 import { TypeSocket } from "../socket";
-import logger from "../logger";
+import logger from "../logging/logger";
 import { getRemoteHost } from "../utils";
 
 function handleError(err:Error|unknown, remoteAddr?:string|string[]) {

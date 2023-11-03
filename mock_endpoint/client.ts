@@ -1,17 +1,17 @@
 import jwt from "jsonwebtoken";
 import readline from "readline";
-import "../src/config";
+import "../src/config/config";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Socket, io } from "socket.io-client";
 import { ClientToServerEvents, ServerToClientEvents } from "../src/socket";
-import logger from "../src/logger";
+import logger from "../src/logging/logger";
 import { Message } from "../src/message_queue";
 
 // const host = "https://chat.webtoonchat.com";
 const host = "http://localhost";
 const secret = process.env.SECRET || "secret";
 console.log(secret);
-const token = jwt.sign({ sub: "user1", role: "user" }, `${secret}`);
+const token = jwt.sign({ sub: "00", role: "user" }, `${secret}`);
 console.log(token);
 const rl = readline.createInterface({
     input: process.stdin,
@@ -36,14 +36,14 @@ function question(query:string) {
 
 const header:Headers = new Headers();
 header.set("Authorization", `Bearer ${token}`);
-fetch(
-    `${host}/chat/history/0`,
-    { headers: header },
-).then(async (res) => {
-    const j:Message[] = await res.json();
-    // const h = j.reduce((prev, cur) => { prev.push(cur.content); return prev; }, new Array<string>());
-    console.log(j);
-});
+// fetch(
+//     `${host}/chat/history/0`,
+//     { headers: header },
+// ).then(async (res) => {
+//     const j:Message[] = await res.json();
+//     // const h = j.reduce((prev, cur) => { prev.push(cur.content); return prev; }, new Array<string>());
+//     console.log(j);
+// });
 /**
 [
   {
@@ -83,10 +83,10 @@ fetch(
   }
 ]
 */
-fetch(
-    `${host}/chat/recent`,
-    { headers: header },
-).then(async (res) => { console.log(await res.json()); });
+// fetch(
+//     `${host}/chat/recent`,
+//     { headers: header },
+// ).then(async (res) => { console.log(await res.json()); });
 
 /**
 [
@@ -147,6 +147,6 @@ socket.on("connect", async () => {
     while (true) {
         // eslint-disable-next-line no-await-in-loop
         const input = String(await question("Input: "));
-        socket.emit("publish", { content: input, characterId: 0 });
+        socket.emit("publish", { content: input, characterId: 1 });
     }
 });

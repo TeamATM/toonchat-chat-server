@@ -1,4 +1,4 @@
-import logger from "../logger";
+import logger from "../logging/logger";
 import { Message } from "../message_queue";
 // eslint-disable-next-line object-curly-newline
 import { historyLength, HistoryModel, MessageModel, HistoryDocument, MessageDocument } from "../mongo";

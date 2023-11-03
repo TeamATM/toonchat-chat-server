@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import logger from "../logger";
+import logger from "../logging/logger";
 import { unsubscribe } from "../message_queue";
 import { MessageFromClient, TypeSocket } from "./types";
 import { generateRandomId, getRemoteHost } from "../utils";

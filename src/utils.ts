@@ -2,7 +2,7 @@ import fs from "fs";
 import axios from "axios";
 import assert from "assert";
 import { Request } from "express";
-import logger from "./logger";
+import logger from "./logging/logger";
 import { TypeSocket } from "./socket";
 import { _findSimilarDocuments } from "./service";
 
