@@ -1,7 +1,7 @@
-import logger from "../logging/logger";
-import { Message } from "../message_queue";
-// eslint-disable-next-line object-curly-newline
-import { historyLength, HistoryModel, MessageModel, HistoryDocument, MessageDocument } from "../mongo";
+import { logger } from "../logging";
+import { historyLength } from "../mongo";
+import { HistoryModel, MessageModel } from "../models";
+import { HistoryDocument, MessageDocument, Message } from "../types";
 
 export async function updateHistory(userId: string, characterId: number, msg: Message) {
     try {

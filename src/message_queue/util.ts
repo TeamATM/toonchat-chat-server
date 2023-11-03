@@ -1,13 +1,14 @@
 import { MongooseError, Types } from "mongoose";
-import { EmbeddingDocument, HistoryDocument, CharacterDocument } from "../mongo";
-import { MessageToClient } from "../socket";
-import { Message, MessageToAI } from "./types";
+import {
+    EmbeddingDocument, HistoryDocument, CharacterDocument,
+    MessageToClient, Message, MessageToInferenceServer,
+} from "../types";
 
 export function buildInferenceMessage(
     history:HistoryDocument,
     persona?:CharacterDocument,
     reference:EmbeddingDocument[] = [],
-):MessageToAI {
+):MessageToInferenceServer {
     const lastMessage = history.messages.at(-1);
     if (!lastMessage) {
         throw new MongooseError("there is no last message in document");

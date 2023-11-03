@@ -1,7 +1,9 @@
 /* eslint-disable import/prefer-default-export */
 import { PipelineStage } from "mongoose";
-import { EmbeddingModel, EmbeddingDocument, maxRefrenceLength } from "../mongo";
-import logger from "../logging/logger";
+import { maxRefrenceLength } from "../mongo";
+import { EmbeddingModel } from "../models";
+import { logger } from "../logging";
+import { EmbeddingDocument } from "../types";
 
 // eslint-disable-next-line no-underscore-dangle
 export async function _findSimilarDocuments(vector: number[]) {

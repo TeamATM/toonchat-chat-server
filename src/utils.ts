@@ -2,8 +2,8 @@ import fs from "fs";
 import axios from "axios";
 import assert from "assert";
 import { Request } from "express";
-import logger from "./logging/logger";
-import { TypeSocket } from "./socket";
+import { logger } from "./logging/logger";
+import { TypeSocket } from "./types";
 import { _findSimilarDocuments } from "./service";
 
 const url = "https://api.openai.com/v1/embeddings";

@@ -1,14 +1,17 @@
 import { MongooseError } from "mongoose";
-import logger from "../logging/logger";
+import { logger } from "../logging";
 import { searchSimilarDocuments } from "../utils";
 import { updateHistory, updateMessage } from "../service";
-import { MessageFromClient, TypeSocket } from "./types";
-import { EmbeddingDocument, HistoryDocument, CharacterDocument } from "../mongo";
 import { checkCanRequest, checkValidCharacterIdAndGetPersona } from "./validator";
-// eslint-disable-next-line object-curly-newline
-import { buildEchoMessage, buildInferenceMessage, buildUserMessage, Message, publish } from "../message_queue";
+import {
+    MessageFromClient, EmbeddingDocument, HistoryDocument,
+    CharacterDocument, TypeSocket, Message,
+} from "../types";
+import {
+    buildEchoMessage, buildInferenceMessage,
+    buildUserMessage, publish,
+} from "../message_queue";
 
-// eslint-disable-next-line import/prefer-default-export
 export async function handleOnPublishMessage(socket: TypeSocket, data: MessageFromClient) {
     const { username: userId } = socket.data;
     let persona: CharacterDocument;

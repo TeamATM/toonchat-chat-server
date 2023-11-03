@@ -3,9 +3,9 @@ import readline from "readline";
 import "../src/config/config";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Socket, io } from "socket.io-client";
-import { ClientToServerEvents, ServerToClientEvents } from "../src/socket";
-import logger from "../src/logging/logger";
-import { Message } from "../src/message_queue";
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+import { ClientToServerEvents, ServerToClientEvents, Message } from "../src/types";
+import { logger } from "../src/logging";
 
 // const host = "https://chat.webtoonchat.com";
 const host = "http://localhost";

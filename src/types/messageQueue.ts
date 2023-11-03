@@ -1,24 +1,19 @@
 import { Types } from "mongoose";
 import { Channel, ConsumeMessage } from "amqplib";
-import { MessageToClient } from "../socket/types";
-import { CharacterDocument, HistoryDocument } from "../mongo/types";
-
-export interface Chat {
-    fromUser: boolean;
-    content: string;
-}
+import {
+    CharacterDocument, HistoryDocument,
+    MessageToClient, Chat,
+} from ".";
 
 export interface Message extends Chat {
     messageId: Types.ObjectId;
     replyMessageId?: Types.ObjectId;
     createdAt: Date;
 }
-
 interface GenerationArgs {
     temperature: number;
     repetition_penalty: number;
 }
-
 interface DataForPrompt {
     persona: string;
     reference: string[];
@@ -26,11 +21,11 @@ interface DataForPrompt {
     generationArgs: GenerationArgs;
 }
 
-export interface MessageFromMQ extends MessageToClient {
+export interface MessageFromInferenceServer extends MessageToClient {
     userId: string;
 }
 
-export interface MessageToAI {
+export interface MessageToInferenceServer {
     id: string;
     task: string;
     args: [DataForPrompt, boolean];
@@ -41,7 +36,10 @@ export interface CharacterUpdateMessage extends CharacterDocument {
     op: string;
 }
 
-export type PublishMessage = MessageToAI | MessageToClient;
+export type PublishMessage = MessageToInferenceServer | MessageToClient;
 
 // eslint-disable-next-line no-unused-vars
-export type ConsumeMessageCallback = (channel: Channel, message: ConsumeMessage|null) => Promise<void>;
+export type ConsumeMessageCallback = (channel: Channel, message: ConsumeMessage | null) => Promise<void>;
+
+// eslint-disable-next-line no-unused-vars
+export type SubscribeProcessType = (message: MessageFromInferenceServer) => Promise<boolean>;
