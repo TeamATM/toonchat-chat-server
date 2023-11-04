@@ -1,8 +1,8 @@
 import { RequestHandler } from "express";
 import { logger } from "../logging";
-import { getRemoteHost } from "../utils";
+import { getClientIpAddress } from "../utils";
 
-export const loggerMiddleware:RequestHandler = (req, res, next) => {
+export const httpLogger:RequestHandler = (req, res, next) => {
     if (req.path === "/health") {
         next();
         return;
@@ -15,6 +15,6 @@ export const loggerMiddleware:RequestHandler = (req, res, next) => {
     next();
 
     logger.info({
-        method, url, params, query, body, remoteHost: getRemoteHost(req), statusCode: res.statusCode,
+        method, url, params, query, body, remoteHost: getClientIpAddress(req), statusCode: res.statusCode,
     });
 };

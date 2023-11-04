@@ -1,9 +1,10 @@
 import { Schema } from "mongoose";
-import { HistoryDocument, Message } from "../types";
+import { MessageDocument, Message } from "../../types";
 
-export const historySchema = new Schema<HistoryDocument>({
+export const messageSchema = new Schema<MessageDocument>({
     _id: Object,
     userId: String,
     characterId: Number,
+    date: Date,
     messages: (Array<Message>),
 });

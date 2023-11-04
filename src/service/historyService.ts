@@ -1,26 +1,20 @@
 import { logger } from "../logging";
-import { historyLength } from "../mongo";
-import { HistoryModel, MessageModel } from "../models";
+import { HistoryModel, MessageModel, historyLength } from "../mongo";
 import { HistoryDocument, MessageDocument, Message } from "../types";
 
 export async function updateHistory(userId: string, characterId: number, msg: Message) {
-    try {
-        return HistoryModel.findOneAndUpdate<HistoryDocument>(
-            { userId, characterId },
-            {
-                $push: {
-                    messages: {
-                        $each: [msg],
-                        $slice: -historyLength,
-                    },
+    return HistoryModel.findOneAndUpdate<HistoryDocument>(
+        { userId, characterId },
+        {
+            $push: {
+                messages: {
+                    $each: [msg],
+                    $slice: -historyLength,
                 },
             },
-            { upsert: true, new: true },
-        );
-    } catch (err) {
-        logger.error(err);
-        return undefined;
-    }
+        },
+        { upsert: true, new: true },
+    );
 }
 
 export function findHistoryByUserIdAndCharacterId(userId: string, characterId: number) {

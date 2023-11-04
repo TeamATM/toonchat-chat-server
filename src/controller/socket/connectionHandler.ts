@@ -1,16 +1,17 @@
 /* eslint-disable no-param-reassign */
-import { logger } from "../logging";
-import { unsubscribe } from "../message_queue";
-import { TypeSocket, MessageFromClient } from "../types";
-import { generateRandomId, getRemoteHost } from "../utils";
+import { CustomErrorError, CustomWarnError } from "../../exceptions/exception";
+import { logger } from "../../logging";
+import { unsubscribe } from "../../message_queue";
+import { TypeSocket, MessageFromClient } from "../../types";
+import { generateRandomId, getClientIpAddress } from "../../utils";
 import { handleOnPublishMessage } from "./publishHandler";
 import { subscribeMessageQueue } from "./subscriptionHandler";
 
 export const maxMessageLength = Number(process.env.MAX_MESSAGE_LENGTH) || 100;
 
 export async function handleConnection(socket:TypeSocket) {
-    socket.data.username ??= `anonymous_${generateRandomId()}`;
-    socket.data.remoteAddress = getRemoteHost(socket);
+    socket.data.userId ??= `anonymous_${generateRandomId()}`;
+    socket.data.remoteAddress = getClientIpAddress(socket);
 
     logger.info({ connection: "connected", remoteHost: socket.data.remoteAddress });
 
@@ -26,8 +27,16 @@ export async function handleConnection(socket:TypeSocket) {
         try {
             handleOnPublishMessage(socket, data);
         } catch (err) {
-            logger.fatal(err, "Unhandled Exception while processing function handleOnPublishMessage.");
-            socket.disconnect(true);
+            if (err instanceof CustomWarnError) {
+                logger.warn({ userId: socket.data.userId, content: data.content }, err.message);
+                socket.emit("error", { content: err.message });
+            } else if (err instanceof CustomErrorError) {
+                logger.error(err, err.message);
+                socket.emit("error", { content: err.message });
+            } else {
+                logger.fatal(err, "Unhandled Exception while processing function handleOnPublishMessage.");
+                socket.disconnect(true);
+            }
         }
     });
 

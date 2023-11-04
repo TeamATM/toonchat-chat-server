@@ -6,7 +6,7 @@ import {
 
 export function buildInferenceMessage(
     history:HistoryDocument,
-    persona?:CharacterDocument,
+    character:CharacterDocument,
     reference:EmbeddingDocument[] = [],
 ):MessageToInferenceServer {
     const lastMessage = history.messages.at(-1);
@@ -20,7 +20,7 @@ export function buildInferenceMessage(
         args: [
             {
                 history,
-                persona: persona ? persona.persona.join(" ") : "",
+                persona: character ? character.persona.join(" ") : "",
                 reference: reference.reduce((prev, cur) => { prev.push(cur.text); return prev; }, new Array<string>()),
                 generationArgs: {
                     temperature: 0.3,
