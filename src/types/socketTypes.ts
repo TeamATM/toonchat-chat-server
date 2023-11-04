@@ -6,7 +6,7 @@ export interface InterServerEvents {
 }
 
 export interface SocketData {
-    username: string;
+    userId: string;
     role: string;
     consumerTag: string;
     remoteAddress: string;

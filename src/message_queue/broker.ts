@@ -24,34 +24,39 @@ const amqpPool: Pool<Channel> = createPool({
     },
 }, { min: 1, max: 10 });
 
-async function publish(exchangeName:string, routingKey: string, message:PublishMessage) {
+// eslint-disable-next-line no-unused-vars
+async function withAmqpConnection<T>(callback: (channel: Channel) => Promise<T>): Promise<T> {
     const channel = await amqpPool.acquire();
-
     try {
-        // await channel.assertExchange(exchangeName, "direct");
+        return await callback(channel);
+    } finally {
+        amqpPool.release(channel);
+    }
+}
+
+async function publish(exchangeName:string, routingKey: string, message:PublishMessage) {
+    withAmqpConnection(async (channel) => {
         channel.publish(
             exchangeName,
             routingKey,
             Buffer.from(JSON.stringify(message)),
             { contentType: "application/json", contentEncoding: "utf-8" },
         );
-    } catch (err) {
-        logger.fatal(err, `Error occured while sending message ${exchangeName} -> ${routingKey}: ${message}`);
-    } finally {
-        // 커넥션풀 반환
-        if (channel) {
-            amqpPool.release(channel);
-        }
-    }
+    }).catch((err) => {
+        logger.fatal(
+            {
+                err, exchangeName, routingKey, message,
+            },
+            "Error occured while publishing message",
+        );
+    });
 }
 
 function unsubscribe(consumerTag: string) {
-    amqpPool.acquire().then((channel) => {
-        channel.cancel(consumerTag)
-            .catch(logger.error)
-            .finally(() => {
-                if (channel) amqpPool.release(channel);
-            });
+    withAmqpConnection(async (channel) => {
+        channel.cancel(consumerTag);
+    }).catch((err) => {
+        logger.error(err, "Error occured while unsubscribe");
     });
 }
 
@@ -63,29 +68,18 @@ async function subscribe(
     callback: ConsumeMessageCallback,
     exchangeName: string = defaultSubscribeExchange,
 ) {
-    const channel = await amqpPool.acquire();
-
-    let consumerTag:string = "";
-    try {
+    return withAmqpConnection(async (channel) => {
         await channel.assertQueue(queueName, queueOptions);
         await channel.bindQueue(queueName, exchangeName || defaultSubscribeExchange, bindPattern);
 
         // consumerTag = 소켓 연결이 끊어졌을때 구독 취소를 위한 정보
-        consumerTag = (await channel.consume(
+        const { consumerTag } = await channel.consume(
             queueName,
             (msg) => callback(channel, msg)
-                .catch((reason) => { channel.ack(msg!); logger.fatal(reason); }),
-        )).consumerTag;
-    } catch (err) {
-        logger.fatal(err);
-    } finally {
-        // 커넥션풀에 반환
-        if (channel) {
-            amqpPool.release(channel);
-        }
-    }
-
-    return consumerTag;
+                .catch((reason) => { channel.nack(msg!); logger.fatal(reason); }),
+        );
+        return consumerTag;
+    });
 }
 
 async function subscribeChatMessage(

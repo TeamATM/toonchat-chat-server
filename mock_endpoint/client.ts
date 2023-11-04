@@ -36,14 +36,14 @@ function question(query:string) {
 
 const header:Headers = new Headers();
 header.set("Authorization", `Bearer ${token}`);
-// fetch(
-//     `${host}/chat/history/0`,
-//     { headers: header },
-// ).then(async (res) => {
-//     const j:Message[] = await res.json();
-//     // const h = j.reduce((prev, cur) => { prev.push(cur.content); return prev; }, new Array<string>());
-//     console.log(j);
-// });
+fetch(
+    `${host}/chat/history/1`,
+    { headers: header },
+).then(async (res) => {
+    const j:Message[] = await res.json();
+    // const h = j.reduce((prev, cur) => { prev.push(cur.content); return prev; }, new Array<string>());
+    console.log(j);
+});
 /**
 [
   {
@@ -83,10 +83,10 @@ header.set("Authorization", `Bearer ${token}`);
   }
 ]
 */
-// fetch(
-//     `${host}/chat/recent`,
-//     { headers: header },
-// ).then(async (res) => { console.log(await res.json()); });
+fetch(
+    `${host}/chat/recent`,
+    { headers: header },
+).then(async (res) => { console.log(await res.json()); });
 
 /**
 [

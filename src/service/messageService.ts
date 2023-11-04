@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { MessageModel } from "../models";
+import { MessageModel } from "../mongo";
 import { MessageDocument, Message } from "../types";
 import { getCurrentDate } from "../utils";
 

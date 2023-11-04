@@ -4,12 +4,15 @@ import http from "http";
 import express from "express";
 import { logger } from "./logging/logger";
 import { buildBotMessage, subscribeCharacterUpdateMessage, subscribeChatMessage } from "./message_queue";
-import { authenticateSocket, authenticateRequest, loggerMiddleware } from "./middleware";
+import {
+    authenticateSocket, authenticateRequest, httpLogger,
+    resolveSocketIpAddress, resolveRequestIpAddress,
+} from "./middleware";
 import { Message, MessageFromInferenceServer, TypeServer } from "./types";
 import { updateHistory, updateMessage } from "./service";
-import { handleConnection } from "./socket";
+import { handleConnection } from "./controller/socket";
 import { connectToMongo } from "./mongo";
-import { chatRouter } from "./routes";
+import { chatRouter } from "./controller/routes";
 
 async function onMessageToDefaultListener(message: MessageFromInferenceServer) {
     if (message.fromUser === false && updateBotMessageAndHistory(message) === undefined) return false;
@@ -39,10 +42,10 @@ export default function initServer() {
 
     app.use(helmet({ hsts: true, frameguard: true, xXssProtection: true }), cors({
         origin: corsOrigin,
-    }), loggerMiddleware);
+    }), resolveRequestIpAddress, httpLogger);
 
     app.use("/chat", authenticateRequest, chatRouter);
-    app.get("/health", (req, res) => res.status(200).send("ok"));
+    app.get("/health", (_, res) => res.status(200).send("ok"));
 
     const server = http.createServer(app);
     server.listen(port, () => { logger.info(`Server is running on port ${port}`); });
@@ -57,6 +60,7 @@ export default function initServer() {
     });
 
     // middleware로 토큰 검증
+    io.use(resolveSocketIpAddress);
     io.use(authenticateSocket);
     io.on("connection", handleConnection);
 

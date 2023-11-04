@@ -1,39 +1,16 @@
-import fs from "fs";
-import axios from "axios";
+/* eslint-disable no-param-reassign */
 import assert from "assert";
 import { Request } from "express";
 import { logger } from "./logging/logger";
 import { TypeSocket } from "./types";
-import { _findSimilarDocuments } from "./service";
 
-const url = "https://api.openai.com/v1/embeddings";
-const openaiKey = process.env.OPENAI_API_KEY;
+export const url = "https://api.openai.com/v1/embeddings";
+export const openaiKey = process.env.OPENAI_API_KEY;
 
 assert(openaiKey);
 
 export function generateRandomId() : string {
     return Math.random().toString(36).substring(2, 10);
-}
-
-export async function getEmbedding(query:string) {
-    if (process.env.PROFILE !== "prod") return JSON.parse(fs.readFileSync("mockEmbedding.txt", { encoding: "utf-8" }));
-    // openai embedding 사용
-    const response = await axios.post(url, {
-        input: query,
-        model: "text-embedding-ada-002",
-    }, {
-        headers: {
-            Authorization: `Bearer ${openaiKey}`,
-            "Content-Type": "application/json",
-        },
-    });
-
-    if (response.status === 200) {
-        return response.data.data[0].embedding as Array<number>;
-    }
-
-    logger.error(`Failed to get embedding. Status code: ${response.status || "undefined"}`);
-    return undefined;
 }
 
 export function getCurrentDate(today: Date) {
@@ -42,31 +19,52 @@ export function getCurrentDate(today: Date) {
     return startDay;
 }
 
-export function getRemoteHost(req:Request|TypeSocket) {
-    if ("ip" in req) {
-        const realRemoteAddress = req.headers["x-forwarded-for"];
-        if (realRemoteAddress !== undefined) {
-            return Array.isArray(realRemoteAddress) ? realRemoteAddress.join(" ") : realRemoteAddress;
-        }
-        logger.warn(req.headers, "Can not find x-forwarded-for header in request with url {}", req.url);
-        return req.ip;
+export function getClientIpAddress(req: Request | TypeSocket) {
+    if (!req.data.remoteAddress) {
+        setIpAddress(req);
     }
-    if ("handshake" in req) {
-        const realRemoteAddress = req.handshake.headers["x-forwarded-for"];
-        if (realRemoteAddress !== undefined) {
-            return Array.isArray(realRemoteAddress) ? realRemoteAddress.join(" ") : realRemoteAddress;
-        }
-        logger.warn(req.handshake.headers, "Can not find x-forwarded-for header in socket");
-        return req.handshake.address;
-    }
-
-    logger.error("RemoteAddress Not Found");
-    return "";
+    return req.data.remoteAddress;
 }
 
-export async function searchSimilarDocuments(userInput: string) {
-    const embeddingVector = await getEmbedding(userInput);
-    if (!embeddingVector) return undefined;
+export function setIpAddress(req: Request | TypeSocket) {
+    if (!req.data) {
+        req.data = { userId: "", remoteAddress: "" };
+    }
+    const clientIpAddress = getHeader(req, "x-forwarded-for");
+    if (clientIpAddress) {
+        req.data.remoteAddress = Array.isArray(clientIpAddress) ? clientIpAddress.join(" ") : clientIpAddress;
+    } else {
+        logger.warn({ headers: getHeaders(req) }, "Can not find x-forwarded-for header in request");
+        req.data.remoteAddress = getIpAddress(req);
+    }
+}
 
-    return _findSimilarDocuments(embeddingVector);
+function getHeaders(target: TypeSocket | Request) {
+    if ("headers" in target) {
+        return target.headers;
+    }
+    if ("handshake" in target) {
+        return target.handshake.headers;
+    }
+    throw new TypeError("type of target is not TypeSocket or Request");
+}
+
+function getHeader(target: TypeSocket | Request, headerName: string) {
+    if ("headers" in target) {
+        return target.headers[headerName];
+    }
+    if ("handshake" in target) {
+        return target.handshake.headers[headerName];
+    }
+    throw new TypeError("type of target is not TypeSocket or Request");
+}
+
+function getIpAddress(target: TypeSocket | Request) {
+    if ("ip" in target) {
+        return target.ip;
+    }
+    if ("handshake" in target) {
+        return target.handshake.address;
+    }
+    throw new TypeError("type of target is not TypeSocket or Request");
 }
