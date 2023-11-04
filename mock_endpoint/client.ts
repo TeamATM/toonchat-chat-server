@@ -5,7 +5,7 @@ import "../src/config/config";
 import { Socket, io } from "socket.io-client";
 // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 import { ClientToServerEvents, ServerToClientEvents, Message } from "../src/types";
-import { logger } from "../src/logging";
+import { logger } from "../src/config";
 
 // const host = "https://chat.webtoonchat.com";
 const host = "http://localhost";

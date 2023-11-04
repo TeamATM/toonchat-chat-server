@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { logger } from "../logging";
+import { logger } from "../config";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/";
 export const historyLength = Number(process.env.CHAT_HISTORY_LENGTH) || 10;

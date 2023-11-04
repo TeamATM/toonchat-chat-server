@@ -1,13 +1,12 @@
 import "../src/config/config";
-import { logger } from "../src/logging";
-import { subscribeChatMessage, publish } from "../src/message_queue";
+import { logger } from "../src/config";
+import { subscribe, publish } from "../src/message_queue";
 import { MessageFromInferenceServer, MessageToInferenceServer } from "../src/types";
 
-subscribeChatMessage("celery", "celery", { durable: true, autoDelete: false }, async (msg) => {
-    const tmp:MessageToInferenceServer = msg as unknown as MessageToInferenceServer;
-    logger.trace(tmp);
-
+subscribe("celery", "celery", { durable: true, autoDelete: false }, async (message) => {
     try {
+        const tmp:MessageToInferenceServer = JSON.parse(message.content.toString("utf-8"));
+        logger.trace(tmp);
         const data:MessageFromInferenceServer = {
             messageId: tmp.id,
             characterId: tmp.args[0].history.characterId,
@@ -16,7 +15,7 @@ subscribeChatMessage("celery", "celery", { durable: true, autoDelete: false }, a
             fromUser: false,
             content: `this is a message from botId: ${tmp.args[0].history.characterId}`,
         };
-        return publish(
+        publish(
             "amq.topic",
             data.userId,
             data,
@@ -24,6 +23,4 @@ subscribeChatMessage("celery", "celery", { durable: true, autoDelete: false }, a
     } catch (err) {
         logger.error(err);
     }
-
-    return Promise.resolve(true);
 }, "celery").catch((err) => logger.error(err, "failed to subscribe"));

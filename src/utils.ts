@@ -1,13 +1,7 @@
 /* eslint-disable no-param-reassign */
-import assert from "assert";
 import { Request } from "express";
-import { logger } from "./logging/logger";
+import { logger } from "./config";
 import { TypeSocket } from "./types";
-
-export const url = "https://api.openai.com/v1/embeddings";
-export const openaiKey = process.env.OPENAI_API_KEY;
-
-assert(openaiKey);
 
 export function generateRandomId() : string {
     return Math.random().toString(36).substring(2, 10);

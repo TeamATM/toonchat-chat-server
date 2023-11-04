@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getChatHistoryAll, getRecentChat } from "../../service";
-import { logger } from "../../logging";
+import { logger } from "../../config";
 import { Message } from "../../types";
 import { getClientIpAddress } from "../../utils";
 
