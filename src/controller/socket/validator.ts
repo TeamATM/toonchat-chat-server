@@ -1,6 +1,7 @@
 import { InvalidRequestError } from "../../exceptions/exception";
-import { maxMessageLength } from "./connectionHandler";
 import { findCharacter, existMessageInProcess } from "../../service";
+
+const maxMessageLength = Number(process.env.MAX_MESSAGE_LENGTH) || 100;
 
 export async function checkCanRequest(userId: string, characterId: number, content: string) {
     // 글자수 제한

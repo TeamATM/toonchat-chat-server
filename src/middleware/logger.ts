@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { logger } from "../logging";
+import { logger } from "../config";
 import { getClientIpAddress } from "../utils";
 
 export const httpLogger:RequestHandler = (req, res, next) => {

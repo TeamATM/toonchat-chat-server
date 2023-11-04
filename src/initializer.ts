@@ -1,37 +1,23 @@
+/* eslint-disable no-param-reassign */
 import cors from "cors";
 import helmet from "helmet";
 import http from "http";
 import express from "express";
-import { logger } from "./logging/logger";
-import { buildBotMessage, subscribeCharacterUpdateMessage, subscribeChatMessage } from "./message_queue";
+import { logger } from "./config";
+import { subscribe, unsubscribe } from "./message_queue";
+import { handleOnPublishMessage, subscribeMessageQueue } from "./controller/socket";
+import { connectToMongo } from "./mongo";
+import { chatRouter } from "./controller/routes";
 import {
     authenticateSocket, authenticateRequest, httpLogger,
     resolveSocketIpAddress, resolveRequestIpAddress,
 } from "./middleware";
-import { Message, MessageFromInferenceServer, TypeServer } from "./types";
-import { updateHistory, updateMessage } from "./service";
-import { handleConnection } from "./controller/socket";
-import { connectToMongo } from "./mongo";
-import { chatRouter } from "./controller/routes";
-
-async function onMessageToDefaultListener(message: MessageFromInferenceServer) {
-    if (message.fromUser === false && updateBotMessageAndHistory(message) === undefined) return false;
-    return true;
-}
-
-async function updateBotMessageAndHistory(messageFromMQ: MessageFromInferenceServer) {
-    const msg: Message = buildBotMessage(messageFromMQ.content, messageFromMQ.messageId);
-
-    logger.debug(messageFromMQ);
-
-    try {
-        updateMessage(messageFromMQ.userId, messageFromMQ.characterId, msg);
-        return updateHistory(messageFromMQ.userId, messageFromMQ.characterId, msg);
-    } catch (err) {
-        logger.error(err, "failed to update bot message.");
-        return undefined;
-    }
-}
+import {
+    MessageFromClient, TypeServer, TypeSocket,
+} from "./types";
+import { CustomWarnError, CustomErrorError } from "./exceptions/exception";
+import { generateRandomId, getClientIpAddress } from "./utils";
+import { onMessageToDefaultListener, onCharacterUpdateMessageRecieved } from "./message_queue/eventListener";
 
 export default function initServer() {
     const port = process.env.PORT || 3000;
@@ -65,14 +51,50 @@ export default function initServer() {
     io.on("connection", handleConnection);
 
     connectToMongo();
-
-    subscribeChatMessage("defaultListener", "#", { durable: true, autoDelete: false }, onMessageToDefaultListener)
-        .catch((err) => logger.fatal(err, "failed to subscribe defaultQueue"));
-
-    subscribeCharacterUpdateMessage(
+    subscribe("defaultListener", "#", { durable: true, autoDelete: false }, onMessageToDefaultListener);
+    subscribe(
         "characterEventListener",
         "characterUpdate",
         { durable: true, autoDelete: false },
+        onCharacterUpdateMessageRecieved,
         "toonchatEvent",
-    ).catch((err) => logger.fatal(err, "failed to subscribe event"));
+    );
+}
+
+async function handleConnection(socket: TypeSocket) {
+    socket.data.userId ??= `anonymous_${generateRandomId()}`;
+    socket.data.remoteAddress = getClientIpAddress(socket);
+
+    logger.info({ connection: "connected", remoteHost: socket.data.remoteAddress });
+
+    try {
+        await subscribeMessageQueue(socket);
+    } catch (err) {
+        logger.fatal({ err, ...socket.data }, "failed to subscribe message queue");
+        socket.disconnect(true);
+        return;
+    }
+
+    socket.on("publish", (data: MessageFromClient) => {
+        try {
+            handleOnPublishMessage(socket, data);
+        } catch (err) {
+            if (err instanceof CustomWarnError) {
+                logger.warn({ userId: socket.data.userId, content: data.content }, err.message);
+                socket.emit("error", { content: err.message });
+            } else if (err instanceof CustomErrorError) {
+                logger.error(err, err.message);
+                socket.emit("error", { content: err.message });
+            } else {
+                logger.fatal(err, "Unhandled Exception while processing function handleOnPublishMessage.");
+                socket.disconnect(true);
+            }
+        }
+    });
+
+    socket.on("disconnect", () => {
+        // 소켓 연결 해제시 구독 취소
+        unsubscribe(socket.data.consumerTag);
+        logger.info({ connection: "disconnected", remoteHost: socket.data.remoteAddress });
+    });
 }

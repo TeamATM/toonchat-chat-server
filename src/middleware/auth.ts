@@ -3,7 +3,7 @@ import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { Request, RequestHandler } from "express";
 import { validateAndDecodeJwtToken } from "../jwt";
 import { TypeSocket } from "../types";
-import { logger } from "../logging";
+import { logger } from "../config";
 import { getClientIpAddress } from "../utils";
 
 function handleError(err:Error|unknown, remoteAddr?:string|string[]) {

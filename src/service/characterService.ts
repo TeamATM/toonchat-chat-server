@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { logger } from "../logging";
+import { logger } from "../config";
 import { CharacterModel } from "../mongo";
 import { CharacterDocument } from "../types";
 

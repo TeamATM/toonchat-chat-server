@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { Channel, ConsumeMessage } from "amqplib";
+import { ConsumeMessage } from "amqplib";
 import {
     CharacterDocument, HistoryDocument,
     MessageToClient, Chat,
@@ -39,7 +39,7 @@ export interface CharacterUpdateMessage extends CharacterDocument {
 export type PublishMessage = MessageToInferenceServer | MessageToClient;
 
 // eslint-disable-next-line no-unused-vars
-export type ConsumeMessageCallback = (channel: Channel, message: ConsumeMessage | null) => Promise<void>;
+export type ConsumeMessageCallback = (message: ConsumeMessage) => Promise<void>;
 
 // eslint-disable-next-line no-unused-vars
 export type SubscribeProcessType = (message: MessageFromInferenceServer) => Promise<boolean>;

@@ -1,4 +1,4 @@
-import { logger } from "../logging";
+import { logger } from "../config";
 import { HistoryModel, MessageModel, historyLength } from "../mongo";
 import { HistoryDocument, MessageDocument, Message } from "../types";
 

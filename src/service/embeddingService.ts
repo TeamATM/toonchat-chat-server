@@ -1,11 +1,16 @@
 /* eslint-disable import/prefer-default-export */
-import { PipelineStage } from "mongoose";
+import assert from "assert";
 import axios from "axios";
 import fs from "fs";
+import { PipelineStage } from "mongoose";
 import { EmbeddingDocument } from "../types";
 import { maxRefrenceLength, EmbeddingModel } from "../mongo";
-import { url, openaiKey } from "../utils";
-import { EmbeddingRequestError } from "../exceptions/exception";
+import { EmbeddingRequestError } from "../exceptions";
+
+const url = "https://api.openai.com/v1/embeddings";
+const openaiKey = process.env.OPENAI_API_KEY;
+
+assert(openaiKey);
 
 async function vectorSearch(vector: number[]) {
     const pipeline: PipelineStage[] = [
