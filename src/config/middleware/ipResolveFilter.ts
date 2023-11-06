@@ -27,7 +27,7 @@ export class IpResolveFilter implements Filter {
         const clientIpAddress = getHeader(req, "x-forwarded-for");
         if (clientIpAddress) {
             req.data.remoteAddress = Array.isArray(clientIpAddress) ? clientIpAddress[0] : clientIpAddress;
-        } else {
+        } else if (!getHeaders(req)["user-agent"]?.startsWith("ELB-HealthChecker")) {
             logger.warn({ headers: getHeaders(req) }, "Can not find x-forwarded-for header in request");
             req.data.remoteAddress = getIpAddress(req);
         }
