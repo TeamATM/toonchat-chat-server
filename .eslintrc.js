@@ -31,6 +31,7 @@ module.exports = {
         indent: [
             "error",
             4,
+            { ignoredNodes: ["PropertyDefinition"] },
         ],
         "linebreak-style": [
             "error",
@@ -53,6 +54,7 @@ module.exports = {
             "off",
         ],
         "import/prefer-default-export": "off",
+        "class-methods-use-this": "off",
         "import/extensions": [
             "error",
             "ignorePackages",

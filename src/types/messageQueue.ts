@@ -2,18 +2,20 @@ import { Types } from "mongoose";
 import { ConsumeMessage } from "amqplib";
 import {
     CharacterDocument, HistoryDocument,
-    MessageToClient, Chat,
+    ChatToClient, Chat,
 } from ".";
 
-export interface Message extends Chat {
+export interface StoredChat extends Chat {
     messageId: Types.ObjectId;
     replyMessageId?: Types.ObjectId;
     createdAt: Date;
 }
+
 interface GenerationArgs {
     temperature: number;
     repetition_penalty: number;
 }
+
 interface DataForPrompt {
     persona: string;
     reference: string[];
@@ -21,7 +23,7 @@ interface DataForPrompt {
     generationArgs: GenerationArgs;
 }
 
-export interface MessageFromInferenceServer extends MessageToClient {
+export interface MessageFromInferenceServer extends ChatToClient {
     userId: string;
 }
 
@@ -36,7 +38,7 @@ export interface CharacterUpdateMessage extends CharacterDocument {
     op: string;
 }
 
-export type PublishMessage = MessageToInferenceServer | MessageToClient;
+export type PublishMessage = MessageToInferenceServer | ChatToClient;
 
 // eslint-disable-next-line no-unused-vars
 export type ConsumeMessageCallback = (message: ConsumeMessage) => Promise<void>;

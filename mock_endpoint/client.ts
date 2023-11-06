@@ -1,17 +1,18 @@
+import "reflect-metadata";
 import jwt from "jsonwebtoken";
 import readline from "readline";
-import "../src/config/config";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Socket, io } from "socket.io-client";
-// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
-import { ClientToServerEvents, ServerToClientEvents, Message } from "../src/types";
+import "../src/config/config";
+import { ClientToServerEvents, ServerToClientEvents } from "../src/types";
 import { logger } from "../src/config";
 
 // const host = "https://chat.webtoonchat.com";
 const host = "http://localhost";
 const secret = process.env.SECRET || "secret";
 console.log(secret);
-const token = jwt.sign({ sub: "00", role: "user" }, `${secret}`);
+let token = "";
+token = jwt.sign({ sub: "00", role: "user" }, `${secret}`);
 console.log(token);
 const rl = readline.createInterface({
     input: process.stdin,
@@ -25,6 +26,24 @@ const socket:Socket<ServerToClientEvents, ClientToServerEvents> = io(host, {
     },
 });
 
+for (let i = 0; i < 100; i += 1) {
+    // token = jwt.sign({ sub: String(i), role: "user" }, `${secret}`);
+    const sock = io(host, { path: "/ws", auth: { token } });
+
+    sock.on("connect", async () => {
+        console.log(`connect ${sock.id}`);
+
+        sock.on("subscribe", (msg) => {
+            // logger.info(msg);
+            console.log(msg);
+            console.log(typeof msg.createdAt);
+        });
+        sock.on("error", (msg) => {
+            logger.error(`ERROR: ${msg.content}`);
+        });
+    });
+}
+
 function question(query:string) {
     return new Promise((resolve) => {
         rl.question(query, (ans) => {
@@ -36,14 +55,14 @@ function question(query:string) {
 
 const header:Headers = new Headers();
 header.set("Authorization", `Bearer ${token}`);
-fetch(
-    `${host}/chat/history/1`,
-    { headers: header },
-).then(async (res) => {
-    const j:Message[] = await res.json();
-    // const h = j.reduce((prev, cur) => { prev.push(cur.content); return prev; }, new Array<string>());
-    console.log(j);
-});
+// fetch(
+//     `${host}/chat/history/1`,
+//     { headers: header },
+// ).then(async (res) => {
+//     const j = await res.json();
+//     // const h = j.reduce((prev, cur) => { prev.push(cur.content); return prev; }, new Array<string>());
+//     console.log(j);
+// });
 /**
 [
   {
@@ -83,10 +102,11 @@ fetch(
   }
 ]
 */
-fetch(
-    `${host}/chat/recent`,
-    { headers: header },
-).then(async (res) => { console.log(await res.json()); });
+
+// fetch(
+//     `${host}/chat/recent`,
+//     { headers: header },
+// ).then(async (res) => { console.log(await res.json().catch(() => res.text())); });
 
 /**
 [
