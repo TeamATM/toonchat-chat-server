@@ -11,10 +11,10 @@ COPY package*.json ./
 RUN npm install --only=production
 
 # 앱의 소스 코드와 자원들을 Docker 이미지 안에 복사합니다.
-COPY ./dist .
+COPY . .
 
 # 앱이 8080 포트에서 실행될 것임을 명시적으로 선언하고, 이 포트를 외부에 노출시킵니다.
 EXPOSE 80
 
 # 컨테이너가 시작할 때 실행될 명령어를 정의합니다.
-ENTRYPOINT [ "node", "src/index.js" ]
+ENTRYPOINT [ "node", "dist/index.js" ]
