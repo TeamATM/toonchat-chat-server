@@ -1,6 +1,3 @@
-import { Socket } from "socket.io";
-import { ClientToServerEvents, ServerToClientEvents } from ".";
-
 export interface InterServerEvents {
     ping: () => void;
 }
@@ -11,8 +8,3 @@ export interface SocketData {
     consumerTag: string;
     remoteAddress: string;
 }
-
-export type TypeSocket = Socket<
-    ClientToServerEvents, ServerToClientEvents,
-    InterServerEvents, SocketData
->;
