@@ -24,7 +24,7 @@ export class HistoryService {
                 },
             },
             { upsert: true, new: true },
-        );
+        ).exec();
     };
 
     findHistoryByUserIdAndCharacterId = (userId: string, characterId: number) => {
