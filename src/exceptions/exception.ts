@@ -7,3 +7,14 @@ export class InvalidRequestError extends CustomWarnError {}
 export class EmbeddingRequestError extends CustomErrorError {}
 
 export class NotImplementError extends Error {}
+export class CustomErrorWrapper extends CustomError {
+    error;
+
+    message;
+
+    constructor(error:Error, message:string) {
+        super();
+        this.error = error;
+        this.message = message;
+    }
+}

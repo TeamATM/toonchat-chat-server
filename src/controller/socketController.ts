@@ -9,7 +9,7 @@ import {
 } from "../service";
 import { ChatFromClient, SocketController } from "../types";
 import { Event, EventController } from "../decorator/eventDefinition";
-import { InvalidRequestError } from "../exceptions";
+import { CustomError } from "../exceptions";
 
 @EventController()
 @Service()
@@ -25,12 +25,11 @@ export class SocketEventController implements SocketController {
         const { userId } = socket.data;
         checkCanRequest(userId, data.characterId, data.content)
             .then(() => getCharacter(data.characterId))
-            .then((character) => {
-                const msg = this.messageService.saveAndPublishEchoMessage(data, userId);
-                this.messageService.publishInferenceRequestMessage(userId, data, msg, character);
-            })
+            .then((character) => this
+                .messageService.saveAndPublishEchoMessageAndInferenceMessage(data, userId, character))
             .catch((err) => {
-                const errorMessage = err instanceof InvalidRequestError ? err.message : "요청 처리에 실패하였습니다.";
+                logger.error({ err }, err.message);
+                const errorMessage = err instanceof CustomError ? err.message : "요청 처리에 실패하였습니다.";
                 this.chatRoomService.sendEventToRoom(userId, "error", { content: errorMessage });
             });
     };
@@ -38,11 +37,7 @@ export class SocketEventController implements SocketController {
     @Event("disconnect")
     handleOnDisconnectMessage = async (socket: Socket) => {
         const leaveResult = socket.leave(socket.data.userId);
-        if (leaveResult) {
-            leaveResult.then(() => this.postDisconnect(socket));
-        } else {
-            this.postDisconnect(socket);
-        }
+        return leaveResult ? leaveResult.then(() => this.postDisconnect(socket)) : this.postDisconnect(socket);
     };
 
     @Event("connect")
@@ -51,11 +46,8 @@ export class SocketEventController implements SocketController {
         const { userId } = socket.data;
         const joinRoomResult = socket.join(userId);
 
-        if (joinRoomResult) {
-            joinRoomResult.then(() => this.postJoinRoom(userId, socket));
-        } else {
-            this.postJoinRoom(userId, socket);
-        }
+        return joinRoomResult
+            ? joinRoomResult.then(() => this.postJoinRoom(userId, socket)) : this.postJoinRoom(userId, socket);
     };
 
     private postJoinRoom(userId: string, socket:Socket) {

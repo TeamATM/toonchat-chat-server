@@ -9,12 +9,13 @@ import {
     CharacterDocument,
     CharacterUpdateMessage, ConsumeMessageCallback,
     StoredChat, ChatFromClient, MessageFromInferenceServer,
-    ChatToClient, EmbeddingDocument, HistoryDocument, MessageToInferenceServer,
+    ChatToClient, EmbeddingDocument, HistoryDocument, MessageToInferenceServer, PublishMessage,
 } from "../types";
 import {
     ChatService, HistoryService,
     CharacterService, ChatRoomService, VectorSearchService,
 } from ".";
+import { CustomErrorWrapper } from "../exceptions";
 
 @Service()
 export class RabbitService {
@@ -32,35 +33,56 @@ export class RabbitService {
         this.registCharacterUpdateEventListener();
     }
 
-    saveAndPublishEchoMessage = (data: ChatFromClient, userId: string) => {
-        const msg = this.chatService.updateUserChat(userId, data.characterId, data.content);
+    saveAndPublishEchoMessageAndInferenceMessage = (
+        data: ChatFromClient,
+        userId: string,
+        character:CharacterDocument,
+    ) => {
+        const storedChat = this.chatService.updateUserChat(userId, data.characterId, data.content);
 
-        const echoMessage = buildEchoMessage(msg, data.characterId);
-        this.rabbitTemplate.publish("amq.topic", userId, echoMessage)
+        const echoMessage = buildEchoMessage(storedChat, data.characterId);
+
+        return Promise.all([
+            this.publishEchoMessage(userId, echoMessage),
+            this.publishInferenceRequestMessage(userId, data, storedChat, character),
+        ]);
+    };
+
+    // eslint-disable-next-line arrow-body-style
+    private publishEchoMessage = async (userId: string, echoMessage: PublishMessage) => {
+        return this.rabbitTemplate.publish("amq.topic", userId, echoMessage)
             .catch((err) => {
                 this.chatRoomService.sendEventToRoom(userId, "error", { content: "요청 처리에 실패하였습니다. 다시 시도해주세요." });
                 logger.error(err, "failed to publish");
             });
-        return msg;
     };
 
-    publishInferenceRequestMessage = async (
+    private publishInferenceRequestMessage = async (
         userId: string,
         data: ChatFromClient,
         msg: StoredChat,
         character: CharacterDocument,
+    // eslint-disable-next-line arrow-body-style
     ) => {
-        const [history, vectorSearchResult] = await Promise.all([
+        return Promise.allSettled([
             this.historyService.updateHistory(userId, data.characterId, msg),
             this.vectorSearchService.searchSimilarDocuments(data.content),
-        ]);
-
-        const inferenceMessage = buildInferenceMessage(history, character, vectorSearchResult);
-        this.rabbitTemplate.publish("celery", "celery", inferenceMessage)
-            .catch((err) => {
-                this.chatRoomService.sendEventToRoom(userId, "error", { content: "요청 처리에 실패하였습니다. 다시 시도해주세요" });
-                logger.error(err, "failed to publish");
-            });
+        ]).then(([history, vectorSearchResult]) => {
+            if (vectorSearchResult.status === "rejected") {
+                logger.error({ vectorSearchResult }, "Failed to resolve vectorSearch");
+            }
+            if (history.status === "rejected") {
+                throw history.reason;
+            }
+            const inferenceMessage = buildInferenceMessage(
+                history.value,
+                character,
+                vectorSearchResult.status === "fulfilled" ? vectorSearchResult.value : [],
+            );
+            return this.rabbitTemplate.publish("celery", "celery", inferenceMessage);
+        }).catch((err) => {
+            throw new CustomErrorWrapper(err, "요청 처리에 실패하였습니다. 다시 시도해주세요");
+        });
     };
 
     unsubscribe = (consumerTag: string) => {
@@ -117,7 +139,7 @@ export class RabbitService {
             ? this.characterService.deleteCharacterInformation
             : this.characterService.upsertCharacterInformation;
 
-        await handler(characterUpdateMessage);
+        return handler(characterUpdateMessage).then();
     };
 
     private updateBotMessageAndHistory = (messageFromMQ: MessageFromInferenceServer) => {
