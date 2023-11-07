@@ -13,7 +13,7 @@ import {
 } from "../types";
 import {
     ChatService, HistoryService,
-    CharacterService, ChatRoomService, VectorSearchService,
+    CharacterService, ChatRoomService, VectorSearchService, buildBotStoredChat,
 } from ".";
 import { CustomErrorWrapper } from "../exceptions";
 
@@ -142,15 +142,14 @@ export class RabbitService {
         return handler(characterUpdateMessage).then();
     };
 
-    private updateBotMessageAndHistory = (messageFromMQ: MessageFromInferenceServer) => {
+    private updateBotMessageAndHistory = async (messageFromMQ: MessageFromInferenceServer) => {
         logger.debug(messageFromMQ);
-        try {
-            const msg = this.chatService.updateBotChat(messageFromMQ);
-            return this.historyService.updateHistory(messageFromMQ.userId, messageFromMQ.characterId, msg);
-        } catch (err) {
-            logger.error(err, "failed to update bot message.");
-            return undefined;
-        }
+        const { userId, characterId } = messageFromMQ;
+        const msg = buildBotStoredChat(messageFromMQ.content, messageFromMQ.messageId);
+        Promise.all([
+            this.chatService.updateBotChat(userId, characterId, msg),
+            this.historyService.updateHistory(messageFromMQ.userId, messageFromMQ.characterId, msg),
+        ]).catch((err) => logger.error(err, "failed to update bot message"));
     };
 }
 

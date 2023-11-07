@@ -24,11 +24,8 @@ export class ChatService {
         return msg;
     };
 
-    updateBotChat = (recievedMessage:MessageFromInferenceServer) => {
-        const msg = buildBotStoredChat(recievedMessage.content, recievedMessage.messageId);
-        this.updateChat(recievedMessage.userId, recievedMessage.characterId, msg);
-        return msg;
-    };
+    updateBotChat = (userId: string, characterId: number, msg:StoredChat) => this
+        .updateChat(userId, characterId, msg);
 }
 
 function buildStoredChat(content: string, fromUser: boolean, messageId?: string): StoredChat {
