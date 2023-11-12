@@ -42,5 +42,7 @@ export class SocketServer {
                     }
                 });
         });
+
+        socket.on("disconnecting", () => this.socketEventDispatcher.handleEvent("disconnect", socket));
     };
 }
