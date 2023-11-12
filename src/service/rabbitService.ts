@@ -90,6 +90,7 @@ export class RabbitService {
     };
 
     subscribe = async (userId: string) => {
+        logger.info({ userId }, "Subscribe Message Queue");
         const queueName = `${userId}_${generateRandomId()}`;
         const consumerTag = await this.rabbitTemplate.subscribe(
             queueName,

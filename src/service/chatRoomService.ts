@@ -1,4 +1,5 @@
 import { Inject, Service } from "typedi";
+import { logger } from "../config";
 import { ErrorToClient, ChatToClient, TypeServer } from "../types";
 
 @Service()
@@ -16,11 +17,18 @@ export class ChatRoomService {
 
     public deleteConsumerTag = (roomName: string) => this.roomConsumerTag.delete(roomName);
 
-    public getUserCountInRoom = (roomName: string) => this.socketServer.sockets.adapter.rooms.get(roomName)?.size;
+    public getUserCountInRoom = (roomName: string) => {
+        const userCount = this.socketServer.sockets.adapter.rooms.get(roomName)?.size;
+        logger.debug({ roomName, userCount }, "Count of user in room");
+        return userCount;
+    };
 
     public sendEventToRoom = (
         roomName: string,
         eventName: "subscribe" | "error",
         message: ChatToClient | ErrorToClient,
-    ) => this.socketServer.to(roomName).emit(eventName, message);
+    ) => {
+        logger.info({ roomName, message }, "Send event to room");
+        return this.socketServer.in(roomName).emit(eventName, message);
+    };
 }

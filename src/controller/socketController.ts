@@ -27,6 +27,7 @@ export class SocketEventController implements SocketController {
             .then(() => getCharacter(data.characterId))
             .then((character) => this
                 .messageService.saveAndPublishEchoMessageAndInferenceMessage(data, userId, character))
+            .then(() => logger.info({ userId, data }, "Publish message"))
             .catch((err) => {
                 logger.error({ err }, err.message);
                 const errorMessage = err instanceof CustomError ? err.message : "요청 처리에 실패하였습니다.";
@@ -64,6 +65,7 @@ export class SocketEventController implements SocketController {
     private postDisconnect(socket:Socket) {
         const userCountInRoom = this.chatRoomService.getUserCountInRoom(socket.data.userId);
         if (!userCountInRoom && this.chatRoomService.isRoomExist(socket.data.userId)) {
+            logger.info({ userId: socket.data.userId }, "Unsubscribe message queue");
             this.messageService.unsubscribe(this.chatRoomService.getConsumerTag(socket.data.userId)!);
             this.chatRoomService.deleteConsumerTag(socket.data.userId);
         }
