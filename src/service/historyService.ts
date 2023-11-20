@@ -60,11 +60,12 @@ export class HistoryService {
         try {
             const recentMessages = HistoryModel.aggregate([
                 { $match: { userId } },
-                { $unwind: "$messages" },
                 {
-                    $group: {
+                    $project: {
+                        lastMessage: {
+                            $last: "$messages",
+                        },
                         _id: "$characterId",
-                        lastMessage: { $last: "$messages" },
                     },
                 },
                 {
