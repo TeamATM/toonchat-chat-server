@@ -87,7 +87,7 @@ export class HistoryService {
                 },
                 { $project: { "characterInfo.persona": 0 } },
                 { $addFields: { "characterInfo.characterId": "$characterId" } },
-                { $sort: { "messages.createdAt": -1 } },
+                { $sort: { "lastMessage.createdAt": -1 } },
             ]).exec();
 
             return recentMessages;
