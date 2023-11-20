@@ -12,7 +12,7 @@ const socketServer = new TypeServer(httpServer, {
         origin: Container.get(EnvConfig).corsAllowOrigin,
     },
     serveClient: false,
-    transports: ["websocket"],
+    // transports: ["websocket"],
 });
 
 Container.set("app", app);
