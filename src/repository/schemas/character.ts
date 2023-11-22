@@ -9,4 +9,5 @@ export const characterSchema = new Schema<CharacterDocument>({
     statusMessage: String,
     hashTag: String,
     persona: (Array<string>),
+    greetingMessage: String,
 });

@@ -170,6 +170,7 @@ function buildInferenceMessage(
         args: [
             {
                 history,
+                greetingMessage: character.greetingMessage,
                 persona: character ? character.persona.join(" ") : "",
                 reference: reference.reduce((prev, cur) => { prev.push(cur.text); return prev; }, new Array<string>()),
                 generationArgs: {
