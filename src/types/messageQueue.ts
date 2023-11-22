@@ -17,6 +17,7 @@ interface GenerationArgs {
 }
 
 interface DataForPrompt {
+    greetingMessage?: string;
     persona: string;
     reference: string[];
     history: HistoryDocument;

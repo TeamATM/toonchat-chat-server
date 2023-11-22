@@ -9,6 +9,7 @@ export interface CharacterDocument extends Document {
     statusMessage: string;
     hashTag: string;
     persona: string[];
+    greetingMessage: string;
 }
 
 export interface ChatDocument extends Document {
