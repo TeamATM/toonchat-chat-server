@@ -2,7 +2,7 @@
 import { Service } from "typedi";
 import { Types } from "mongoose";
 import { ChatModel } from "../repository";
-import { ChatDocument, MessageFromInferenceServer, StoredChat } from "../types";
+import { ChatDocument, StoredChat } from "../types";
 import { getCurrentDate } from "../utils";
 
 @Service()

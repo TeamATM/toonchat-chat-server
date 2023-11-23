@@ -6,9 +6,7 @@ export function generateRandomId() : string {
 }
 
 export function getCurrentDate(today: Date) {
-    const startDay = new Date(today);
-    startDay.setHours(0, 0, 0, 0);
-    return startDay;
+    return new Date(today.getFullYear(), today.getMonth(), today.getDate());
 }
 
 export function getClientIpAddress(req: Request | Socket) {
