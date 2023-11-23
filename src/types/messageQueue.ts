@@ -11,17 +11,17 @@ export interface StoredChat extends Chat {
     createdAt: Date;
 }
 
-interface GenerationArgs {
-    temperature: number;
-    repetition_penalty: number;
-}
+// interface GenerationArgs {
+//     temperature: number;
+//     repetition_penalty: number;
+// }
 
 interface DataForPrompt {
     greetingMessage?: string;
     persona: string;
     reference: string[];
     history: HistoryDocument;
-    generationArgs: GenerationArgs;
+    generationArgs: object;
 }
 
 export interface MessageFromInferenceServer extends ChatToClient {
