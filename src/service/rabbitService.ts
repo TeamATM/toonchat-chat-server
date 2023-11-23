@@ -173,9 +173,10 @@ function buildInferenceMessage(
                 greetingMessage: character.greetingMessage,
                 persona: character ? character.persona.join(" ") : "",
                 reference: reference.reduce((prev, cur) => { prev.push(cur.text); return prev; }, new Array<string>()),
-                generationArgs: {
+                generationArgs: { // TODO: DB에서 값 가져오기
                     temperature: 0.3,
-                    repetition_penalty: 1.5,
+                    repetition_penalty: 1.2,
+                    do_sample: true,
                 },
             },
             false,
